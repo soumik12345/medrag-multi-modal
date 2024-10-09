@@ -1,0 +1,8 @@
+.venv/
+.env
+cursor_prompt.txt
+**egg-info/
+**pycache**
+.ruff_cache/
+test.py
+**.pdf
