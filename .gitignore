@@ -6,3 +6,4 @@ cursor_prompt.txt
 .ruff_cache/
 test.py
 **.pdf
+images/

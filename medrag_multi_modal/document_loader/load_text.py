@@ -7,15 +7,6 @@ import PyPDF2
 import rich
 import weave
 from firerequests import FireRequests
-from pydantic import BaseModel
-
-
-class Page(BaseModel):
-    text: str
-    page_idx: int
-    document_name: str
-    file_path: str
-    file_url: str
 
 
 class TextLoader:
@@ -25,7 +16,7 @@ class TextLoader:
     This class handles the downloading of a PDF file from a given URL if it does not already exist locally.
     It uses PyPDF2 to read the PDF and pymupdf4llm to convert pages to markdown. The processed pages are stored in a list
     of Page objects, which can be optionally published to a Weave dataset.
-    
+
     !!! example "Example Usage"
         ```python
         import asyncio
@@ -81,7 +72,6 @@ class TextLoader:
             end_page = self.page_count - 1
         return start_page, end_page
 
-    @weave.op()
     async def load_data(
         self,
         start_page: Optional[int] = None,
@@ -111,7 +101,7 @@ class TextLoader:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
         """
         start_page, end_page = self.get_page_indices(start_page, end_page)
-        pages: list[Page] = []
+        pages = []
         processed_pages_counter: int = 1
         total_pages = end_page - start_page
 
@@ -121,13 +111,13 @@ class TextLoader:
                 doc=self.document_file_path, pages=[page_idx], show_progress=False
             )
             pages.append(
-                Page(
-                    text=text,
-                    page_idx=page_idx,
-                    document_name=self.document_name,
-                    file_path=self.document_file_path,
-                    file_url=self.url,
-                ).model_dump()
+                {
+                    "text": text,
+                    "page_idx": page_idx,
+                    "document_name": self.document_name,
+                    "file_path": self.document_file_path,
+                    "file_url": self.url,
+                }
             )
             rich.print(f"Processed pages {processed_pages_counter}/{total_pages}")
             processed_pages_counter += 1

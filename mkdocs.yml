@@ -61,5 +61,6 @@ nav:
   - Home: 'index.md'
   - Document Loader:
     - Text Loader: 'document_loader/load_text.md'
+    - Text and Image Loader: 'document_loader/load_text_image.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal
