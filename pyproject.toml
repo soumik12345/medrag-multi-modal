@@ -1,0 +1,62 @@
+[project]
+name = "medrag-multi-modal"
+version = "0.0.1"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "Byaldi>=0.0.5",
+    "firerequests>=0.0.7",
+    "python-dotenv>=1.0.1",
+    "pymupdf4llm>=0.0.17",
+    "torch>=2.4.1",
+    "weave>=0.51.12",
+    "pip>=24.2",
+    "uv>=0.4.20",
+    "pytest>=8.3.3",
+    "PyPDF2>=3.0.1",
+    "isort>=5.13.2",
+    "black>=24.10.0",
+    "ruff>=0.6.9",
+    "mkdocs>=1.6.1",
+    "mkdocstrings>=0.26.1",
+    "mkdocstrings-python>=1.11.1",
+    "mkdocs-material>=9.5.39",
+    "mkdocs-minify-plugin>=0.8.0",
+    "mkdocs-glightbox>=0.4.0",
+    "mkdocs-jupyter>=0.25.0",
+    "jupyter>=1.1.1",
+]
+
+[project.optional-dependencies]
+core = [
+    "Byaldi>=0.0.5",
+    "firerequests>=0.0.7",
+    "python-dotenv>=1.0.1",
+    "pymupdf4llm>=0.0.17",
+    "torch>=2.4.1",
+    "weave>=0.51.12",
+]
+
+dev = [
+    "pytest>=8.3.3",
+    "PyPDF2>=3.0.1",
+    "isort>=5.13.2",
+    "black>=24.10.0",
+    "ruff>=0.6.9",
+]
+
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocstrings>=0.26.1",
+    "mkdocstrings-python>=1.11.1",
+    "mkdocs-material>=9.5.39",
+    "mkdocs-minify-plugin>=0.8.0",
+    "mkdocs-glightbox>=0.4.0",
+    "mkdocs-jupyter>=0.25.0",
+    "jupyter>=1.1.1",
+]
+
+
+[tool.pytest.ini_options]
+pythonpath = "."
