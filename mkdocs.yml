@@ -14,8 +14,6 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-  logo: assets/logomark.svg
-  favicon: assets/logomark.svg
   features:
     - content.code.annotate
     - content.code.copy
