@@ -64,8 +64,8 @@ class ImageLoader(TextLoader):
 
     async def load_data(
         self,
-        start_page: int,
-        end_page: int,
+        start_page: Optional[int] = None,
+        end_page: Optional[int] = None,
         image_save_dir: str = "./images",
         dataset_name: Optional[str] = None,
     ):
@@ -82,8 +82,8 @@ class ImageLoader(TextLoader):
         with the specified name.
 
         Args:
-            start_page (int): The starting page index (0-based) to process.
-            end_page (int): The ending page index (0-based) to process.
+            start_page (Optional[int]): The starting page index (0-based) to process.
+            end_page (Optional[int]): The ending page index (0-based) to process.
             dataset_name (Optional[str]): The name of the Weave dataset to publish the
                 processed images to. Defaults to None.
 
