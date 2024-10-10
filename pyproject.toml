@@ -7,10 +7,11 @@ requires-python = ">=3.10"
 dependencies = [
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
+    "pdf2image>=1.17.0",
     "python-dotenv>=1.0.1",
     "pymupdf4llm>=0.0.17",
     "torch>=2.4.1",
-    "weave>=0.51.12",
+    "weave>=0.51.14",
     "pip>=24.2",
     "uv>=0.4.20",
     "pytest>=8.3.3",
@@ -32,10 +33,11 @@ dependencies = [
 core = [
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
+    "pdf2image>=1.17.0",
     "python-dotenv>=1.0.1",
     "pymupdf4llm>=0.0.17",
     "torch>=2.4.1",
-    "weave>=0.51.12",
+    "weave>=0.51.14",
 ]
 
 dev = [
