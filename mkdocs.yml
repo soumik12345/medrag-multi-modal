@@ -59,9 +59,14 @@ extra_javascript:
 
 nav:
   - Home: 'index.md'
+  - Setup:
+    - Installation: 'installation/install.md'
+    - Development: 'installation/development.md'
   - Document Loader:
     - Text Loader: 'document_loader/load_text.md'
     - Text and Image Loader: 'document_loader/load_text_image.md'
     - Image Loader: 'document_loader/load_image.md'
+  - Retrieval:
+    - Multi-Modal Retrieval: 'retreival/multi_modal_retrieval.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal

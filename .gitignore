@@ -8,3 +8,5 @@ test.py
 **.pdf
 images/
 wandb/
+.byaldi/
+artifacts/
