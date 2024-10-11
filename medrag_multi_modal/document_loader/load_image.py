@@ -13,8 +13,8 @@ from medrag_multi_modal.document_loader.load_text import TextLoader
 
 class ImageLoader(TextLoader):
     """
-    ImageLoader is a class that extends the `TextLoader` class to handle the extraction and
-    loading of images from a PDF file.
+    `ImageLoader` is a class that extends the `TextLoader` class to handle the extraction and
+    loading of pages from a PDF file as images.
 
     This class provides functionality to convert specific pages of a PDF document into images
     and optionally publish these images to a Weave dataset.
