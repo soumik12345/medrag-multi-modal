@@ -1,10 +1,6 @@
-# MedRAG Multi-Modal
+# Setting up the development environment
 
-Multi-modal RAG for medical docmain.
-
-## Installation
-
-### For Development
+## Install Poppler
 
 For MacOS, you need to run
 
@@ -17,6 +13,8 @@ For Debian/Ubuntu, you need to run
 ```bash
 sudo apt-get install -y poppler-utils
 ```
+
+## Install the dependencies
 
 Then, you can install the dependencies using uv in the virtual environment `.venv` using
 
@@ -32,6 +30,8 @@ After this, you need to activate the virtual environment using
 ```bash
 source .venv/bin/activate
 ```
+
+## [Optional] Install Flash Attention
 
 In the activated virtual environment, you can optionally install Flash Attention (required for ColPali) using
 
