@@ -3,11 +3,11 @@ import os
 from typing import Optional
 
 import rich
+import wandb
 import weave
 from pdf2image.pdf2image import convert_from_path
 from PIL import Image
 
-import wandb
 from medrag_multi_modal.document_loader.load_text import TextLoader
 
 
