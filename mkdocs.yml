@@ -63,7 +63,9 @@ nav:
     - Installation: 'installation/install.md'
     - Development: 'installation/development.md'
   - Document Loader:
-    - Text Loader: 'document_loader/load_text.md'
+    - Text Loader:
+      - Base: 'document_loader/text_loader/base_text_loader.md'
+      - PyMuPDF4LLM: 'document_loader/text_loader/pymupdf4llm_text_loader.md'
     - Text and Image Loader: 'document_loader/load_text_image.md'
     - Image Loader: 'document_loader/load_image.md'
   - Retrieval:
