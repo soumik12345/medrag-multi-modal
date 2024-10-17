@@ -67,6 +67,7 @@ nav:
       - Base: 'document_loader/text_loader/base_text_loader.md'
       - PyMuPDF4LLM: 'document_loader/text_loader/pymupdf4llm_text_loader.md'
       - PyPDF2: 'document_loader/text_loader/pypdf2_text_loader.md'
+      - PDFPlumber: 'document_loader/text_loader/pdfplumber_text_loader.md'
     - Text and Image Loader: 'document_loader/load_text_image.md'
     - Image Loader: 'document_loader/load_image.md'
   - Retrieval:
