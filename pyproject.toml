@@ -27,6 +27,7 @@ dependencies = [
     "mkdocs-glightbox>=0.4.0",
     "mkdocs-jupyter>=0.25.0",
     "jupyter>=1.1.1",
+    "pdfplumber>=0.11.4",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +35,7 @@ core = [
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
     "pdf2image>=1.17.0",
+    "pdfplumber>=0.11.4",
     "python-dotenv>=1.0.1",
     "pymupdf4llm>=0.0.17",
     "torch>=2.4.1",
