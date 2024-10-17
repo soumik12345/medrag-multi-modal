@@ -49,7 +49,7 @@ class MarkerTextLoader(BaseTextLoader):
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
     """
 
-    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int, **kwargs) -> Dict[str, str]:
         """
         Process a single page of the PDF and extract its structured text using marker-pdf.
 
@@ -65,6 +65,7 @@ class MarkerTextLoader(BaseTextLoader):
 
         Args:
             page_idx (int): The index of the page to process.
+            **kwargs: Additional keyword arguments to be passed to `marker.convert.convert_single_pdf`.
 
         Returns:
             Dict[str, str]: A dictionary containing the processed page data.
@@ -78,6 +79,7 @@ class MarkerTextLoader(BaseTextLoader):
             batch_multiplier=1,
             start_page=page_idx,
             ocr_all_pages=True,
+            **kwargs,
         )
 
         return {

@@ -65,7 +65,7 @@ class BaseTextLoader(ABC):
         return start_page, end_page
 
     @abstractmethod
-    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int, **kwargs) -> Dict[str, str]:
         """
         Abstract method to process a single page of the PDF and extract the text data.
 
@@ -74,6 +74,7 @@ class BaseTextLoader(ABC):
 
         Args:
             page_idx (int): The index of the page to process.
+            **kwargs: Additional keyword arguments that may be used by underlying libraries.
 
         Returns:
             Dict[str, str]: A dictionary containing the processed page data.
@@ -85,6 +86,7 @@ class BaseTextLoader(ABC):
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
         weave_dataset_name: Optional[str] = None,
+        **kwargs,
     ) -> List[Dict[str, str]]:
         """
         Asynchronously loads text from a PDF file specified by a URL or local file path.
@@ -106,6 +108,7 @@ class BaseTextLoader(ABC):
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
             weave_dataset_name (Optional[str]): The name of the Weave dataset to publish the pages to, if provided.
+            **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries, each containing the text and metadata for a processed page.
@@ -127,7 +130,7 @@ class BaseTextLoader(ABC):
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
-            page_data = await self.extract_page_data(page_idx)
+            page_data = await self.extract_page_data(page_idx, **kwargs)
             pages.append(page_data)
             rich.print(
                 f"Processed page idx: {page_idx}, progress: {processed_pages_counter}/{total_pages}"

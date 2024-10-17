@@ -48,7 +48,7 @@ class PyMuPDF4LLMTextLoader(BaseTextLoader):
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
     """
 
-    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int, **kwargs) -> Dict[str, str]:
         """
         Process a single page of the PDF and convert it to markdown using `pymupdf4llm`.
 
@@ -63,12 +63,13 @@ class PyMuPDF4LLMTextLoader(BaseTextLoader):
 
         Args:
             page_idx (int): The index of the page to process.
+            **kwargs: Additional keyword arguments to be passed to `pymupdf4llm.to_markdown`.
 
         Returns:
             Dict[str, str]: A dictionary containing the processed page data.
         """
         text = pymupdf4llm.to_markdown(
-            doc=self.document_file_path, pages=[page_idx], show_progress=False
+            doc=self.document_file_path, pages=[page_idx], show_progress=False, **kwargs
         )
         return {
             "text": text,

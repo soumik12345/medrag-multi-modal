@@ -48,7 +48,7 @@ class PDFPlumberTextLoader(BaseTextLoader):
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
     """
 
-    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int, **kwargs) -> Dict[str, str]:
         """
         Process a single page of the PDF and extract its text using pdfplumber.
 
@@ -63,13 +63,14 @@ class PDFPlumberTextLoader(BaseTextLoader):
 
         Args:
             page_idx (int): The index of the page to process.
+            **kwargs: Additional keyword arguments to be passed to `pdfplumber.Page.extract_text`.
 
         Returns:
             Dict[str, str]: A dictionary containing the processed page data.
         """
         with pdfplumber.open(self.document_file_path) as pdf:
             page = pdf.pages[page_idx]
-            text = page.extract_text()
+            text = page.extract_text(**kwargs)
 
         return {
             "text": text,
