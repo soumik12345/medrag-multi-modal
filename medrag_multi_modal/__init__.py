@@ -1,6 +1,6 @@
 from .document_loader import (
     ImageLoader,
-    MarkerTextLoader,
+    PDFPlumberTextLoader,
     PyMuPDF4LLMTextLoader,
     PyPDF2TextLoader,
     TextImageLoader,
@@ -10,7 +10,7 @@ from .retrieval import MultiModalRetriever
 __all__ = [
     "PyMuPDF4LLMTextLoader",
     "PyPDF2TextLoader",
-    "MarkerTextLoader",
+    "PDFPlumberTextLoader",
     "ImageLoader",
     "TextImageLoader",
     "MultiModalRetriever",
