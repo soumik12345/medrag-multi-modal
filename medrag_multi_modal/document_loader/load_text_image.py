@@ -8,10 +8,10 @@ import rich
 import weave
 from PIL import Image
 
-from medrag_multi_modal.document_loader.load_text import TextLoader
+from medrag_multi_modal.document_loader.text_loader import PyMuPDF4LLMTextLoader
 
 
-class TextImageLoader(TextLoader):
+class TextImageLoader(PyMuPDF4LLMTextLoader):
     """
     A class for loading and processing text and images from a document.
 

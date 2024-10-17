@@ -1,11 +1,10 @@
 import os
 from typing import Any, Optional
 
+import wandb
 import weave
 from byaldi import RAGMultiModalModel
 from PIL import Image
-
-import wandb
 
 from ..utils import get_wandb_artifact
 
@@ -13,11 +12,11 @@ from ..utils import get_wandb_artifact
 class MultiModalRetriever(weave.Model):
     """
     MultiModalRetriever is a class that facilitates the retrieval of page images using ColPali.
-    
+
     This class leverages the `byaldi.RAGMultiModalModel` to perform document retrieval tasks.
     It can be initialized with a pre-trained model or from a specified W&B artifact. The class
     also provides methods to index new data and to predict/retrieve documents based on a query.
-    
+
     !!! example "Indexing Data"
         ```python
         import wandb
@@ -31,14 +30,14 @@ class MultiModalRetriever(weave.Model):
             index_name="grays-anatomy",
         )
         ```
-    
+
     !!! example "Retrieving Documents"
         ```python
         import weave
 
         import wandb
         from medrag_multi_modal.retrieval import MultiModalRetriever
-        
+
         weave.init(project_name="ml-colabs/medrag-multi-modal")
         retriever = MultiModalRetriever.from_artifact(
             index_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy:v0",
@@ -54,6 +53,7 @@ class MultiModalRetriever(weave.Model):
     Attributes:
         model_name (str): The name of the model to be used for retrieval.
     """
+
     model_name: str
     _docs_retrieval_model: Optional[RAGMultiModalModel] = None
     _metadata: Optional[dict] = None

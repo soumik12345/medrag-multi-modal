@@ -11,7 +11,7 @@ class PyMuPDF4LLMTextLoader(BaseTextLoader):
     processing it into markdown using `pymupdf4llm`, and optionally publishing it to a Weave dataset.
 
     This class extends the BaseTextLoader and implements the abstract methods to load and process pages from a PDF file.
-    
+
     This class will handle the downloading of a PDF file from a given URL if it does not already exist locally.
     It uses PyPDF2 to read the PDF and pymupdf4llm to convert pages to markdown. The processed pages are stored in a list
     of Page objects, which can be optionally published to a Weave dataset.
