@@ -49,18 +49,19 @@ class MarkerTextLoader(BaseTextLoader):
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
     """
 
-    async def _process_page(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
         """
         Process a single page of the PDF and extract its structured text using marker-pdf.
 
         Returns a dictionary with the processed page data.
         The dictionary will have the following keys and values:
-            - "text": (str) the extracted structured text from the page.
-            - "page_idx": (int) the index of the page.
-            - "document_name": (str) the name of the document.
-            - "file_path": (str) the local file path where the PDF is stored.
-            - "file_url": (str) the URL of the PDF file.
-            - "meta": (dict) the metadata extracted from the page by marker-pdf.
+
+        - "text": (str) the extracted structured text from the page.
+        - "page_idx": (int) the index of the page.
+        - "document_name": (str) the name of the document.
+        - "file_path": (str) the local file path where the PDF is stored.
+        - "file_url": (str) the URL of the PDF file.
+        - "meta": (dict) the metadata extracted from the page by marker-pdf.
 
         Args:
             page_idx (int): The index of the page to process.

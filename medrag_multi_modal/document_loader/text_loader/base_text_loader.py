@@ -65,9 +65,9 @@ class BaseTextLoader(ABC):
         return start_page, end_page
 
     @abstractmethod
-    async def _process_page(self, page_idx: int) -> Dict[str, str]:
+    async def extract_page_data(self, page_idx: int) -> Dict[str, str]:
         """
-        Abstract method to process a single page of the PDF.
+        Abstract method to process a single page of the PDF and extract the text data.
 
         Overwrite this method in the subclass to provide the actual implementation and
         processing logic for each page of the PDF using various PDF processing libraries.
@@ -96,7 +96,7 @@ class BaseTextLoader(ABC):
         returns a list of Page objects containing the text and metadata.
 
         It uses `PyPDF2` to calculate the number of pages in the PDF and the
-        overriden `_process_page` method provides the actual implementation to process
+        overriden `extract_page_data` method provides the actual implementation to process
         each page, extract the text from the PDF, and convert it to markdown.
         It processes pages concurrently using `asyncio` for efficiency.
 
@@ -110,11 +110,12 @@ class BaseTextLoader(ABC):
         Returns:
             List[Dict[str, str]]: A list of dictionaries, each containing the text and metadata for a processed page.
             Each dictionary will have the following keys and values:
-                - "text": (str) the processed page data in markdown format.
-                - "page_idx": (int) the index of the page.
-                - "document_name": (str) the name of the document.
-                - "file_path": (str) the local file path where the PDF is stored.
-                - "file_url": (str) the URL of the PDF file.
+
+            - "text": (str) the processed page data in markdown format.
+            - "page_idx": (int) the index of the page.
+            - "document_name": (str) the name of the document.
+            - "file_path": (str) the local file path where the PDF is stored.
+            - "file_url": (str) the URL of the PDF file.
 
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
@@ -126,7 +127,7 @@ class BaseTextLoader(ABC):
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
-            page_data = await self._process_page(page_idx)
+            page_data = await self.extract_page_data(page_idx)
             pages.append(page_data)
             rich.print(
                 f"Processed page idx: {page_idx}, progress: {processed_pages_counter}/{total_pages}"
