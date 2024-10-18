@@ -1,12 +1,20 @@
+# Virtual environments and environment files
 .venv/
 .env
-cursor_prompt.txt
-**egg-info/
+
+# Python-related
 **pycache**
+**egg-info/
 .ruff_cache/
-test.py
-**.pdf
+
+# Project-specific directories
+artifacts/
 images/
 wandb/
+
+# Temporary and generated files
+**.pdf
 .byaldi/
-artifacts/
+cursor_prompt.txt
+test.py
+uv.lock
