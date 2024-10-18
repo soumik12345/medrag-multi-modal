@@ -69,7 +69,6 @@ nav:
       - PyPDF2: 'document_loader/text_loader/pypdf2_text_loader.md'
       - PDFPlumber: 'document_loader/text_loader/pdfplumber_text_loader.md'
       - Marker: 'document_loader/text_loader/marker_text_loader.md'
-    - Text and Image Loader: 'document_loader/load_text_image.md'
     - Image Loader: 'document_loader/load_image.md'
   - Retrieval:
     - Multi-Modal Retrieval: 'retreival/multi_modal_retrieval.md'
