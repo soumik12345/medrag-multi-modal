@@ -17,6 +17,42 @@ TOKENIZER_OR_TOKEN_COUNTER = Union[
 
 
 class SemanticChunker:
+    """
+    SemanticChunker is a class that chunks documents into smaller segments and
+    publishes them as datasets.
+
+    This class uses the `semchunk` library to break down large documents into
+    smaller, manageable chunks based on a specified tokenizer or token counter.
+    This is particularly useful for processing large text datasets where
+    smaller segments are needed for analysis or other operations.
+
+    !!! example "Example Usage"
+        ```python
+        import weave
+        from dotenv import load_dotenv
+
+        from medrag_multi_modal.semantic_chunking import SemanticChunker
+
+        load_dotenv()
+        weave.init(project_name="ml-colabs/medrag-multi-modal")
+        chunker = SemanticChunker(chunk_size=256)
+        chunker.chunk_and_publish(
+            document_dataset_name="grays-anatomy-text:v13",
+            chunk_dataset_name="grays-anatomy-chunks",
+        )
+        ```
+
+    Args:
+        tokenizer_or_token_counter (TOKENIZER_OR_TOKEN_COUNTER): The tokenizer or
+            token counter to be used for chunking.
+        chunk_size (Optional[int]): The size of each chunk. If not specified, the
+            default chunk size from `semchunk` will be used.
+        max_token_chars (Optional[int]): The maximum number of characters per token.
+            If not specified, the default value from `semchunk` will be used.
+        memoize (bool): Whether to memoize the chunking process for efficiency.
+            Default is True.
+    """
+
     def __init__(
         self,
         tokenizer_or_token_counter: TOKENIZER_OR_TOKEN_COUNTER = "o200k_base",
