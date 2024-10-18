@@ -19,6 +19,7 @@ dependencies = [
     "isort>=5.13.2",
     "black>=24.10.0",
     "ruff>=0.6.9",
+    "marker-pdf>=0.2.17",
     "mkdocs>=1.6.1",
     "mkdocstrings>=0.26.1",
     "mkdocstrings-python>=1.11.1",
@@ -27,13 +28,17 @@ dependencies = [
     "mkdocs-glightbox>=0.4.0",
     "mkdocs-jupyter>=0.25.0",
     "jupyter>=1.1.1",
+    "pdfplumber>=0.11.4",
 ]
 
 [project.optional-dependencies]
 core = [
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
+    "marker-pdf>=0.2.17",
     "pdf2image>=1.17.0",
+    "pdfplumber>=0.11.4",
+    "PyPDF2>=3.0.1",
     "python-dotenv>=1.0.1",
     "pymupdf4llm>=0.0.17",
     "torch>=2.4.1",
@@ -42,7 +47,6 @@ core = [
 
 dev = [
     "pytest>=8.3.3",
-    "PyPDF2>=3.0.1",
     "isort>=5.13.2",
     "black>=24.10.0",
     "ruff>=0.6.9",

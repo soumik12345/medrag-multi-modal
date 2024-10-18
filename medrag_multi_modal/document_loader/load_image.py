@@ -3,15 +3,15 @@ import os
 from typing import Optional
 
 import rich
+import wandb
 import weave
 from pdf2image.pdf2image import convert_from_path
 from PIL import Image
 
-import wandb
-from medrag_multi_modal.document_loader.load_text import TextLoader
+from medrag_multi_modal.document_loader.text_loader import PyMuPDF4LLMTextLoader
 
 
-class ImageLoader(TextLoader):
+class ImageLoader(PyMuPDF4LLMTextLoader):
     """
     `ImageLoader` is a class that extends the `TextLoader` class to handle the extraction and
     loading of pages from a PDF file as images.
