@@ -1,12 +1,10 @@
 import os
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import weave
 
-try:
+if TYPE_CHECKING:
     from byaldi import RAGMultiModalModel
-except ImportError:
-    pass
 
 from PIL import Image
 
@@ -77,18 +75,20 @@ class CalPaliRetriever(weave.Model):
     """
 
     model_name: str
-    _docs_retrieval_model: Optional[RAGMultiModalModel] = None
+    _docs_retrieval_model: Optional["RAGMultiModalModel"] = None
     _metadata: Optional[dict] = None
     _data_artifact_dir: Optional[str] = None
 
     def __init__(
         self,
         model_name: str = "vidore/colpali-v1.2",
-        docs_retrieval_model: Optional[RAGMultiModalModel] = None,
+        docs_retrieval_model: Optional["RAGMultiModalModel"] = None,
         data_artifact_dir: Optional[str] = None,
         metadata_dataset_name: Optional[str] = None,
     ):
         super().__init__(model_name=model_name)
+        from byaldi import RAGMultiModalModel
+
         self._docs_retrieval_model = (
             docs_retrieval_model or RAGMultiModalModel.from_pretrained(self.model_name)
         )
@@ -106,6 +106,8 @@ class CalPaliRetriever(weave.Model):
         metadata_dataset_name: str,
         data_artifact_name: str,
     ):
+        from byaldi import RAGMultiModalModel
+
         index_artifact_dir = get_wandb_artifact(index_artifact_name, "colpali-index")
         data_artifact_dir = get_wandb_artifact(data_artifact_name, "dataset")
         docs_retrieval_model = RAGMultiModalModel.from_index(
