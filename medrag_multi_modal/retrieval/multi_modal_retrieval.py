@@ -1,10 +1,11 @@
 import os
 from typing import Any, Optional
 
-import wandb
 import weave
 from byaldi import RAGMultiModalModel
 from PIL import Image
+
+import wandb
 
 from ..utils import get_wandb_artifact
 

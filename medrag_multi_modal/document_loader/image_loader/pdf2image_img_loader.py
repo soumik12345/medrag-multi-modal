@@ -36,7 +36,14 @@ class PDF2ImageLoader(BaseImageLoader):
             **kwargs: Additional keyword arguments that may be used by pdf2image.
 
         Returns:
-            Dict[str, str]: A dictionary containing the processed page data.
+            Dict[str, Any]: A dictionary containing the processed page data.
+            The dictionary will have the following keys and values:
+
+            - "page_idx": (int) the index of the page.
+            - "document_name": (str) the name of the document.
+            - "file_path": (str) the local file path where the PDF is stored.
+            - "file_url": (str) the URL of the PDF file.
+            - "image_file_path": (str) the local file path where the image is stored.
         """
         image = convert_from_path(
             self.document_file_path,
