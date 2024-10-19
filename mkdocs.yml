@@ -72,6 +72,6 @@ nav:
     - Image Loader: 'document_loader/load_image.md'
   - Chunking: 'chunking.md'
   - Retrieval:
-    - Multi-Modal Retrieval: 'retreival/multi_modal_retrieval.md'
+    - ColPali Retrieval: 'retreival/colpali.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal

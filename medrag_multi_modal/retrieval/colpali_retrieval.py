@@ -9,9 +9,9 @@ from PIL import Image
 from ..utils import get_wandb_artifact
 
 
-class MultiModalRetriever(weave.Model):
+class CalPaliRetriever(weave.Model):
     """
-    MultiModalRetriever is a class that facilitates the retrieval of page images using ColPali.
+    CalPaliRetriever is a class that facilitates the retrieval of page images using ColPali.
 
     This class leverages the `byaldi.RAGMultiModalModel` to perform document retrieval tasks.
     It can be initialized with a pre-trained model or from a specified W&B artifact. The class
@@ -20,10 +20,10 @@ class MultiModalRetriever(weave.Model):
     !!! example "Indexing Data"
         ```python
         import wandb
-        from medrag_multi_modal.retrieval import MultiModalRetriever
+        from medrag_multi_modal.retrieval import CalPaliRetriever
 
         wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="index")
-        retriever = MultiModalRetriever()
+        retriever = CalPaliRetriever()
         retriever.index(
             data_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy-images:v1",
             weave_dataset_name="grays-anatomy-images:v0",
@@ -36,10 +36,10 @@ class MultiModalRetriever(weave.Model):
         import weave
 
         import wandb
-        from medrag_multi_modal.retrieval import MultiModalRetriever
+        from medrag_multi_modal.retrieval import CalPaliRetriever
 
         weave.init(project_name="ml-colabs/medrag-multi-modal")
-        retriever = MultiModalRetriever.from_artifact(
+        retriever = CalPaliRetriever.from_artifact(
             index_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy:v0",
             metadata_dataset_name="grays-anatomy-images:v0",
             data_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy-images:v1",

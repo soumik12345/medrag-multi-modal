@@ -5,6 +5,7 @@ description = ""
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "bm25s[full]>=0.2.2",
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
     "pdf2image>=1.17.0",
@@ -35,6 +36,7 @@ dependencies = [
 
 [project.optional-dependencies]
 core = [
+    "bm25s[full]>=0.2.2",
     "Byaldi>=0.0.5",
     "firerequests>=0.0.7",
     "marker-pdf>=0.2.17",
