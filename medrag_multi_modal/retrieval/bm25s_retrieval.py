@@ -172,8 +172,8 @@ class BM25sRetriever(weave.Model):
         results = self._retriever.retrieve(query_tokens, k=top_k)
         retrieved_chunks = []
         for chunk, score in zip(
-            results["results"].flatten().tolist(),
-            results["scores"].flatten().tolist(),
+            results.documents.flatten().tolist(),
+            results.scores.flatten().tolist(),
         ):
             retrieved_chunks.append({"chunk": chunk, "score": score})
         return retrieved_chunks
