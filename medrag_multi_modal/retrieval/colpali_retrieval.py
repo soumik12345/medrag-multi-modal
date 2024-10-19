@@ -20,13 +20,13 @@ class CalPaliRetriever(weave.Model):
 
     !!! example "Indexing Data"
         First you need to install `Byaldi` library by Answer.ai.
-        
+
         ```bash
         uv pip install Byaldi>=0.0.5
         ```
-        
+
         Next, you can index the data by running the following code:
-        
+
         ```python
         import wandb
         from medrag_multi_modal.retrieval import CalPaliRetriever
@@ -42,13 +42,13 @@ class CalPaliRetriever(weave.Model):
 
     !!! example "Retrieving Documents"
         First you need to install `Byaldi` library by Answer.ai.
-        
+
         ```bash
         uv pip install Byaldi>=0.0.5
         ```
-        
+
         Next, you can retrieve the documents by running the following code:
-        
+
         ```python
         import weave
 
