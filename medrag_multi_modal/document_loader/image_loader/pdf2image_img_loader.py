@@ -7,6 +7,19 @@ from .base_img_loader import BaseImageLoader
 
 
 class PDF2ImageLoader(BaseImageLoader):
+    """
+    `PDF2ImageLoader` is a class that extends the `BaseImageLoader` class to handle the extraction and
+    loading of pages from a PDF file as images using the pdf2image library.
+
+    This class provides functionality to convert specific pages of a PDF document into images
+    and optionally publish these images to a Weave artifact.
+    It is like a snapshot image version of each of the pages from the PDF.
+
+    Args:
+        url (str): The URL of the PDF document.
+        document_name (str): The name of the document.
+        document_file_path (str): The path to the PDF file.
+    """
 
     def __init__(self, url: str, document_name: str, document_file_path: str):
         super().__init__(url, document_name, document_file_path)
@@ -14,6 +27,17 @@ class PDF2ImageLoader(BaseImageLoader):
     async def extract_page_data(
         self, page_idx: int, image_save_dir: str, **kwargs
     ) -> Dict[str, Any]:
+        """
+        Extracts a single page from the PDF as an image using pdf2image library.
+
+        Args:
+            page_idx (int): The index of the page to process.
+            image_save_dir (str): The directory to save the extracted image.
+            **kwargs: Additional keyword arguments that may be used by pdf2image.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the processed page data.
+        """
         image = convert_from_path(
             self.document_file_path,
             first_page=page_idx + 1,

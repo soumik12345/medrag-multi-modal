@@ -19,6 +19,20 @@ class BaseImageLoader(BaseTextLoader):
     async def extract_page_data(
         self, page_idx: int, image_save_dir: str, **kwargs
     ) -> Dict[str, str]:
+        """
+        Abstract method to process a single page of the PDF and extract the image data.
+
+        Overwrite this method in the subclass to provide the actual implementation and
+        processing logic for each page of the PDF using various PDF processing libraries.
+
+        Args:
+            page_idx (int): The index of the page to process.
+            image_save_dir (str): The directory to save the extracted images.
+            **kwargs: Additional keyword arguments that may be used by underlying libraries.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the processed page data.
+        """
         pass
 
     async def load_data(
@@ -30,6 +44,42 @@ class BaseImageLoader(BaseTextLoader):
         cleanup: bool = True,
         **kwargs,
     ) -> List[Dict[str, str]]:
+        """
+        Asynchronously loads images from a PDF file specified by a URL or local file path.
+        The overrided processing abstract method then processes the images,
+        and optionally publishes it to a Weave artifact.
+
+        This function downloads a PDF from a given URL if it does not already exist locally,
+        reads the specified range of pages, scans each page's content to extract images, and
+        returns a list of Page objects containing the images and metadata.
+
+        It uses `PyPDF2` to calculate the number of pages in the PDF and the
+        overriden `extract_page_data` method provides the actual implementation to process
+        each page, extract the image content from the PDF, and convert it to png format.
+        It processes pages concurrently using `asyncio` for efficiency.
+
+        If a wandb_artifact_name is provided, the processed pages are published to a Weave artifact.
+
+        Args:
+            start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
+            end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            wandb_artifact_name (Optional[str]): The name of the Weave artifact to publish the pages to, if provided.
+            image_save_dir (str): The directory to save the extracted images.
+            cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
+            **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, each containing the image and metadata for a processed page.
+            Each dictionary will have the following keys and values:
+
+            - "page_idx": (int) the index of the page.
+            - "document_name": (str) the name of the document.
+            - "file_path": (str) the local file path where the PDF is stored.
+            - "file_url": (str) the URL of the PDF file.
+            - "image_file_path" or "image_file_paths": (str) the local file path where the image/images are stored.
+        Raises:
+            ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
+        """
         os.makedirs(image_save_dir, exist_ok=True)
         start_page, end_page = self.get_page_indices(start_page, end_page)
         pages = []
