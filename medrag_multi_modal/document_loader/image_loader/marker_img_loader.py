@@ -15,6 +15,33 @@ class MarkerImageLoader(BaseImageLoader):
     This class provides functionality to extract images from a PDF file using marker library,
     and optionally publish these images to a WandB artifact.
 
+    !!! example "Example Usage"
+        ```python
+        import asyncio
+
+        import weave
+
+        import wandb
+        from medrag_multi_modal.document_loader.image_loader import MarkerImageLoader
+
+        weave.init(project_name="ml-colabs/medrag-multi-modal")
+        wandb.init(project="medrag-multi-modal", entity="ml-colabs")
+        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+        loader = MarkerImageLoader(
+            url=url,
+            document_name="Gray's Anatomy",
+            document_file_path="grays_anatomy.pdf",
+        )
+        asyncio.run(
+            loader.load_data(
+                start_page=31,
+                end_page=36,
+                wandb_artifact_name="grays-anatomy-images",
+                cleanup=False,
+            )
+        )
+        ```
+
     Args:
         url (str): The URL of the PDF document.
         document_name (str): The name of the document.
