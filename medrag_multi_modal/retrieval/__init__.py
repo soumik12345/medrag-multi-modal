@@ -1,3 +1,4 @@
-from .multi_modal_retrieval import MultiModalRetriever
+from .bm25s_retrieval import BM25sRetriever
+from .colpali_retrieval import CalPaliRetriever
 
-__all__ = ["MultiModalRetriever"]
+__all__ = ["CalPaliRetriever", "BM25sRetriever"]
