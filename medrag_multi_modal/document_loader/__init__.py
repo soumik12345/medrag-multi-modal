@@ -1,4 +1,4 @@
-from .image_loader import PDF2ImageLoader
+from .image_loader import MarkerImageLoader, PDF2ImageLoader
 from .text_loader import (
     MarkerTextLoader,
     PDFPlumberTextLoader,
@@ -12,4 +12,5 @@ __all__ = [
     "PDFPlumberTextLoader",
     "MarkerTextLoader",
     "PDF2ImageLoader",
+    "MarkerImageLoader",
 ]

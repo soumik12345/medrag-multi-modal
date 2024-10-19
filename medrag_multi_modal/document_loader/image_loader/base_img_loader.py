@@ -47,7 +47,7 @@ class BaseImageLoader(BaseTextLoader):
         """
         Asynchronously loads images from a PDF file specified by a URL or local file path.
         The overrided processing abstract method then processes the images,
-        and optionally publishes it to a Weave artifact.
+        and optionally publishes it to a WandB artifact.
 
         This function downloads a PDF from a given URL if it does not already exist locally,
         reads the specified range of pages, scans each page's content to extract images, and
@@ -58,12 +58,12 @@ class BaseImageLoader(BaseTextLoader):
         each page, extract the image content from the PDF, and convert it to png format.
         It processes pages concurrently using `asyncio` for efficiency.
 
-        If a wandb_artifact_name is provided, the processed pages are published to a Weave artifact.
+        If a wandb_artifact_name is provided, the processed pages are published to a WandB artifact.
 
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
-            wandb_artifact_name (Optional[str]): The name of the Weave artifact to publish the pages to, if provided.
+            wandb_artifact_name (Optional[str]): The name of the WandB artifact to publish the pages to, if provided.
             image_save_dir (str): The directory to save the extracted images.
             cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
