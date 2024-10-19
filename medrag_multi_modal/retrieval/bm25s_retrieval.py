@@ -29,9 +29,9 @@ class BM25sRetriever(weave.Model):
         super().__init__(language=language, use_stemmer=use_stemmer)
         self._retriever = retriever or bm25s.BM25()
 
-    def index(self, corpus_dataset_name: str, index_name: Optional[str] = None):
-        corpus_dataset = weave.ref(corpus_dataset_name).get().rows
-        corpus = [row["text"] for row in corpus_dataset]
+    def index(self, chunk_dataset_name: str, index_name: Optional[str] = None):
+        chunk_dataset = weave.ref(chunk_dataset_name).get().rows
+        corpus = [row["text"] for row in chunk_dataset]
         corpus_tokens = bm25s.tokenize(
             corpus,
             stopwords=LANGUAGE_DICT[self.language],
@@ -40,7 +40,7 @@ class BM25sRetriever(weave.Model):
         self._retriever.index(corpus_tokens)
         if index_name:
             self._retriever.save(
-                index_name, corpus=[dict(row) for row in corpus_dataset]
+                index_name, corpus=[dict(row) for row in chunk_dataset]
             )
             if wandb.run:
                 artifact = wandb.Artifact(
@@ -81,8 +81,8 @@ class BM25sRetriever(weave.Model):
             stopwords=LANGUAGE_DICT[self.language],
             stemmer=Stemmer(self.language) if self.use_stemmer else None,
         )
-        results, scores = self._retriever.retrieve(query_tokens, k=top_k)
+        results = self._retriever.retrieve(query_tokens, k=top_k)
         return {
-            "results": results,
-            "scores": scores,
+            "results": results.documents,
+            "scores": results.scores,
         }
