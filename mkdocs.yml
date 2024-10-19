@@ -72,6 +72,7 @@ nav:
     - Image Loader: 'document_loader/load_image.md'
   - Chunking: 'chunking.md'
   - Retrieval:
-    - ColPali Retrieval: 'retreival/colpali.md'
+    - BM25-Sparse: 'retreival/bm25s.md'
+    - ColPali: 'retreival/colpali.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal
