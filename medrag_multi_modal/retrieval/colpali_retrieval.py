@@ -2,7 +2,12 @@ import os
 from typing import Any, Optional
 
 import weave
-from byaldi import RAGMultiModalModel
+
+try:
+    from byaldi import RAGMultiModalModel
+except ImportError:
+    pass
+
 from PIL import Image
 
 import wandb
