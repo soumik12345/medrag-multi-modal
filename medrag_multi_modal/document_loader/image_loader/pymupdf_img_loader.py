@@ -2,8 +2,8 @@ import os
 from typing import Any, Dict
 
 import fitz
-from PIL import Image
-from io import BytesIO
+from PIL import Image, ImageOps, UnidentifiedImageError
+import io
 
 from .base_img_loader import BaseImageLoader
 
@@ -76,7 +76,7 @@ class PyMuPDFImageLoader(BaseImageLoader):
         image_file_paths = []
 
         pdf_document = fitz.open(self.document_file_path)
-        page = pdf_document[page_idx]
+        page = pdf_document.load_page(page_idx)
 
         images = page.get_images(full=True)
         for img_idx, image in enumerate(images):
@@ -85,33 +85,33 @@ class PyMuPDFImageLoader(BaseImageLoader):
             image_bytes = base_image["image"]
             image_ext = base_image["ext"]
 
-            if image_ext == "jb2":
-                image_ext = "png"
-            elif image_ext == "jpx":
-                image_ext = "jpg"
+            try:
+                img = Image.open(io.BytesIO(image_bytes))
 
-            image_file_name = f"page{page_idx}_fig{img_idx}.{image_ext}"
-            image_file_path = os.path.join(image_save_dir, image_file_name)
+                if img.mode in ['1', 'P']:
+                    img = ImageOps.invert(img.convert('L'))
 
-            # For JBIG2 and JPEG2000, we need to convert the image
-            if base_image["ext"] in ["jb2", "jpx"]:
-                try:
-                    pix = fitz.Pixmap(image_bytes)
-                    pix.save(image_file_path)
-                except Exception as e:
-                    print(f"Error processing image: {e}")
-                    # Fallback to using PIL for image conversion
-                    try:
-                        img = Image.open(BytesIO(image_bytes))
-                        img.save(image_file_path)
-                    except Exception as e:
-                        print(f"Failed to process image with PIL: {e}")
-                        continue  # Skip this image if both methods fail
-            else:
-                with open(image_file_path, "wb") as image_file:
-                    image_file.write(image_bytes)
+                if img.mode == 'CMYK':
+                    img = img.convert('RGB')
 
-            image_file_paths.append(image_file_path)
+                if image_ext not in ['png', 'jpg', 'jpeg']:
+                    image_ext = 'png'
+                    image_file_name = f"page{page_idx}_fig{img_idx}.png"
+                    image_file_path = os.path.join(image_save_dir, image_file_name)
+
+                    img.save(image_file_path, format="PNG")
+                else:
+                    image_file_name = f"page{page_idx}_fig{img_idx}.{image_ext}"
+                    image_file_path = os.path.join(image_save_dir, image_file_name)
+
+                    with open(image_file_path, "wb") as image_file:
+                        image_file.write(image_bytes)
+
+                image_file_paths.append(image_file_path)
+            
+            except (UnidentifiedImageError, OSError) as e:
+                print(f"Skipping image at page {page_idx}, fig {img_idx} due to an error: {e}")
+                continue
 
         pdf_document.close()
 
