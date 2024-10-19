@@ -16,6 +16,17 @@ LANGUAGE_DICT = {
 
 
 class BM25sRetriever(weave.Model):
+    """
+    `BM25sRetriever` is a class that provides functionality for indexing and
+    retrieving documents using the [BM25-Sparse](https://github.com/xhluca/bm25s).
+
+    Args:
+        language (str): The language of the documents to be indexed and retrieved.
+        use_stemmer (bool): A flag indicating whether to use stemming during tokenization.
+        retriever (Optional[bm25s.BM25]): An instance of the BM25 retriever. If not provided,
+            a new instance is created.
+    """
+
     language: str
     use_stemmer: bool
     _retriever: Optional[bm25s.BM25]
@@ -30,6 +41,34 @@ class BM25sRetriever(weave.Model):
         self._retriever = retriever or bm25s.BM25()
 
     def index(self, chunk_dataset_name: str, index_name: Optional[str] = None):
+        """
+        Indexes a dataset of text chunks using the BM25 algorithm.
+
+        This function takes a dataset of text chunks identified by `chunk_dataset_name`,
+        tokenizes the text using the BM25 tokenizer with optional stemming, and indexes
+        the tokenized text using the BM25 retriever. If an `index_name` is provided, the
+        index is saved to disk and logged as a Weights & Biases artifact.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            import wandb
+            from medrag_multi_modal.retrieval import BM25sRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="bm25s-index")
+            retriever = BM25sRetriever()
+            retriever.index(chunk_dataset_name="grays-anatomy-text:v13", index_name="grays-anatomy-bm25s")
+            ```
+
+        Args:
+            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
+            index_name (Optional[str]): The name to save the index under. If provided, the index
+                is saved to disk and logged as a Weights & Biases artifact.
+        """
         chunk_dataset = weave.ref(chunk_dataset_name).get().rows
         corpus = [row["text"] for row in chunk_dataset]
         corpus_tokens = bm25s.tokenize(
@@ -56,6 +95,23 @@ class BM25sRetriever(weave.Model):
 
     @classmethod
     def from_wandb_artifact(cls, index_artifact_address: str):
+        """
+        Creates an instance of the class from a Weights & Biases artifact.
+
+        This class method retrieves a BM25 index artifact from Weights & Biases,
+        downloads the artifact, and loads the BM25 retriever with the index and its
+        associated corpus. The method also extracts metadata from the artifact to
+        initialize the class instance with the appropriate language and stemming
+        settings.
+
+        Args:
+            index_artifact_address (str): The address of the Weights & Biases artifact
+                containing the BM25 index.
+
+        Returns:
+            An instance of the class initialized with the BM25 retriever and metadata
+            from the artifact.
+        """
         if wandb.run:
             artifact = wandb.run.use_artifact(
                 index_artifact_address, type="bm25s-index"
@@ -76,13 +132,48 @@ class BM25sRetriever(weave.Model):
 
     @weave.op()
     def retrieve(self, query: str, top_k: int = 2):
+        """
+        Retrieves the top-k most relevant chunks for a given query using the BM25 algorithm.
+
+        This method tokenizes the input query using the BM25 tokenizer, which takes into
+        account the language-specific stopwords and optional stemming. It then retrieves
+        the top-k most relevant chunks from the BM25 index based on the tokenized query.
+        The results are returned as a list of dictionaries, each containing a chunk and
+        its corresponding relevance score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval import BM25sRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = BM25sRetriever.from_wandb_artifact(
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:v2"
+            )
+            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
+            ```
+
+        Args:
+            query (str): The input query string to search for relevant chunks.
+            top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
+
+        Returns:
+            list: A list of dictionaries, each containing a retrieved chunk and its
+                relevance score.
+        """
         query_tokens = bm25s.tokenize(
             query,
             stopwords=LANGUAGE_DICT[self.language],
             stemmer=Stemmer(self.language) if self.use_stemmer else None,
         )
         results = self._retriever.retrieve(query_tokens, k=top_k)
-        return {
-            "results": results.documents,
-            "scores": results.scores,
-        }
+        retrieved_chunks = []
+        for chunk, score in zip(
+            results["results"].flatten().tolist(),
+            results["scores"].flatten().tolist(),
+        ):
+            retrieved_chunks.append({"chunk": chunk, "score": score})
+        return retrieved_chunks
