@@ -177,27 +177,6 @@ class NVEmbed2Retriever(weave.Model):
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
 
-        !!! example "Example Usage"
-            ```python
-            import weave
-            from dotenv import load_dotenv
-
-            import wandb
-            from medrag_multi_modal.retrieval import NVEmbed2Retriever
-
-            load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = NVEmbed2Retriever(model_name="nvidia/NV-Embed-v2")
-            retriever.index(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_name="grays-anatomy-nvembed2",
-            )
-            retriever = NVEmbed2Retriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-nvembed2:v0",
-            )
-            ```
-
         Args:
             query (list[str]): The input query strings to search for relevant chunks.
             top_k (int, optional): The number of top relevant chunks to retrieve.
@@ -273,6 +252,7 @@ class NVEmbed2Retriever(weave.Model):
             list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
         """
         query = [
-            f"Instruct: Given a question, retrieve passages that answer the question\nQuery: {query}"
+            f"""Instruct: Given a question, retrieve passages that answer the question
+Query: {query}"""
         ]
         return self.retrieve(query, top_k, metric)

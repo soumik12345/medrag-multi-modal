@@ -200,23 +200,6 @@ class MedCPTRetriever(weave.Model):
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
 
-        !!! example "Example Usage"
-            ```python
-            import weave
-            from dotenv import load_dotenv
-
-            import wandb
-            from medrag_multi_modal.retrieval import MedCPTRetriever
-
-            load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
-            )
-            retriever.retrieve(query="What are Ribosomes?")
-            ```
-
         Args:
             query (str): The input query string to search for relevant chunks.
             top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
@@ -253,3 +236,44 @@ class MedCPTRetriever(weave.Model):
                 }
             )
         return retrieved_chunks
+
+    @weave.op()
+    def predict(
+        self,
+        query: str,
+        top_k: int = 2,
+        metric: SimilarityMetric = SimilarityMetric.COSINE,
+    ):
+        """
+        Predicts the most relevant chunks for a given query.
+
+        This function uses the `retrieve` method to find the top-k relevant chunks
+        from the dataset based on the input query. It allows specifying the number
+        of top relevant chunks to retrieve and the similarity metric to use for scoring.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            import wandb
+            from medrag_multi_modal.retrieval import MedCPTRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = MedCPTRetriever.from_wandb_artifact(
+                chunk_dataset_name="grays-anatomy-chunks:v0",
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
+            )
+            retriever.predict(query="What are Ribosomes?")
+            ```
+
+        Args:
+            query (str): The input query string to search for relevant chunks.
+            top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
+            metric (SimilarityMetric, optional): The similarity metric to use for scoring. Defaults to cosine similarity.
+
+        Returns:
+            list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
+        """
+        return self.retrieve(query, top_k, metric)

@@ -141,21 +141,6 @@ class BM25sRetriever(weave.Model):
         The results are returned as a list of dictionaries, each containing a chunk and
         its corresponding relevance score.
 
-        !!! example "Example Usage"
-            ```python
-            import weave
-            from dotenv import load_dotenv
-
-            from medrag_multi_modal.retrieval import BM25sRetriever
-
-            load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = BM25sRetriever.from_wandb_artifact(
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:v2"
-            )
-            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
-            ```
-
         Args:
             query (str): The input query string to search for relevant chunks.
             top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
@@ -177,3 +162,37 @@ class BM25sRetriever(weave.Model):
         ):
             retrieved_chunks.append({"chunk": chunk, "score": score})
         return retrieved_chunks
+
+    @weave.op()
+    def predict(self, query: str, top_k: int = 2):
+        """
+        Predicts the top-k most relevant chunks for a given query using the BM25 algorithm.
+
+        This function is a wrapper around the `retrieve` method. It takes an input query string,
+        tokenizes it using the BM25 tokenizer, and retrieves the top-k most relevant chunks from
+        the BM25 index. The results are returned as a list of dictionaries, each containing a chunk
+        and its corresponding relevance score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval import BM25sRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = BM25sRetriever.from_wandb_artifact(
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:v2"
+            )
+            retrieved_chunks = retriever.predict(query="What are Ribosomes?")
+            ```
+
+        Args:
+            query (str): The input query string to search for relevant chunks.
+            top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
+
+        Returns:
+            list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
+        """
+        return self.retrieve(query, top_k)

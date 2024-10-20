@@ -170,22 +170,6 @@ class ContrieverRetriever(weave.Model):
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
 
-        !!! example "Example Usage"
-            ```python
-            import weave
-            from dotenv import load_dotenv
-
-            from medrag_multi_modal.retrieval import ContrieverRetriever, SimilarityMetric
-
-            load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = ContrieverRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-contriever:v1",
-            )
-            scores = retriever.retrieve(query="What are Ribosomes?", metric=SimilarityMetric.COSINE)
-            ```
-
         Args:
             query (str): The input query string to search for relevant chunks.
             top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
@@ -213,3 +197,44 @@ class ContrieverRetriever(weave.Model):
                 }
             )
         return retrieved_chunks
+
+    @weave.op()
+    def predict(
+        self,
+        query: str,
+        top_k: int = 2,
+        metric: SimilarityMetric = SimilarityMetric.COSINE,
+    ):
+        """
+        Predicts the top-k most relevant chunks for a given query using the specified similarity metric.
+
+        This function is a wrapper around the `retrieve` method. It takes an input query string,
+        retrieves the top-k most relevant chunks from the precomputed vector index based on the
+        specified similarity metric, and returns the results as a list of dictionaries, each containing
+        a chunk and its corresponding relevance score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval import ContrieverRetriever, SimilarityMetric
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = ContrieverRetriever.from_wandb_artifact(
+                chunk_dataset_name="grays-anatomy-chunks:v0",
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-contriever:v1",
+            )
+            scores = retriever.predict(query="What are Ribosomes?", metric=SimilarityMetric.COSINE)
+            ```
+
+        Args:
+            query (str): The input query string to search for relevant chunks.
+            top_k (int, optional): The number of top relevant chunks to retrieve. Defaults to 2.
+            metric (SimilarityMetric, optional): The similarity metric to use for scoring. Defaults to cosine similarity.
+
+        Returns:
+            list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
+        """
+        return self.retrieve(query, top_k, metric)
