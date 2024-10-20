@@ -53,15 +53,16 @@ class MarkerTextLoader(BaseTextLoader):
         """
         Process a single page of the PDF and extract its structured text using marker-pdf.
 
-        Returns a dictionary with the processed page data.
-        The dictionary will have the following keys and values:
+        Returns:
+            Dict[str, str]: A dictionary with the processed page data.
+            The dictionary will have the following keys and values:
 
-        - "text": (str) the extracted structured text from the page.
-        - "page_idx": (int) the index of the page.
-        - "document_name": (str) the name of the document.
-        - "file_path": (str) the local file path where the PDF is stored.
-        - "file_url": (str) the URL of the PDF file.
-        - "meta": (dict) the metadata extracted from the page by marker-pdf.
+            - "text": (str) the extracted structured text from the page.
+            - "page_idx": (int) the index of the page.
+            - "document_name": (str) the name of the document.
+            - "file_path": (str) the local file path where the PDF is stored.
+            - "file_url": (str) the URL of the PDF file.
+            - "meta": (dict) the metadata extracted from the page by marker-pdf.
 
         Args:
             page_idx (int): The index of the page to process.
