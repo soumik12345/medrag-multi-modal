@@ -10,8 +10,6 @@ from PIL import Image
 
 import wandb
 
-import wandb
-
 from ..utils import get_wandb_artifact
 
 
