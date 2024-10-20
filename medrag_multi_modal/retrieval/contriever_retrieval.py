@@ -13,10 +13,8 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 
-import wandb
-
-from ..utils import get_wandb_artifact, get_torch_backend
-from .common import SimilarityMetric, argsort_scores, mean_pooling
+from ..utils import get_torch_backend, get_wandb_artifact
+from .common import SimilarityMetric, argsort_scores, mean_pooling, save_vector_index
 
 
 class ContrieverRetriever(weave.Model):
@@ -80,7 +78,10 @@ class ContrieverRetriever(weave.Model):
             weave.init(project_name="ml-colabs/medrag-multi-modal")
             wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="contriever-index")
             retriever = ContrieverRetriever(model_name="facebook/contriever")
-            retriever.index(chunk_dataset_name="grays-anatomy-chunks:v0", index_name="grays-anatomy-contriever")
+            retriever.index(
+                chunk_dataset_name="grays-anatomy-chunks:v0",
+                index_name="grays-anatomy-contriever",
+            )
             ```
 
         Args:
@@ -95,17 +96,12 @@ class ContrieverRetriever(weave.Model):
             vector_index = self.encode(corpus)
             self._vector_index = vector_index
             if index_name:
-                safetensors.torch.save_file(
-                    {"vector_index": vector_index.cpu()}, "vector_index.safetensors"
+                save_vector_index(
+                    self._vector_index,
+                    "contriever-index",
+                    index_name,
+                    {"model_name": self.model_name},
                 )
-                if wandb.run:
-                    artifact = wandb.Artifact(
-                        name=index_name,
-                        type="contriever-index",
-                        metadata={"model_name": self.model_name},
-                    )
-                    artifact.add_file("vector_index.safetensors")
-                    artifact.save()
 
     @classmethod
     def from_wandb_artifact(cls, chunk_dataset_name: str, index_artifact_address: str):

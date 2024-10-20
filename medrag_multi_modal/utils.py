@@ -1,9 +1,12 @@
 import torch
+
 import wandb
 
 
 def get_wandb_artifact(
-    artifact_name: str, artifact_type: str, get_metadata: bool = False
+    artifact_name: str,
+    artifact_type: str,
+    get_metadata: bool = False,
 ) -> str:
     if wandb.run:
         artifact = wandb.use_artifact(artifact_name, type=artifact_type)

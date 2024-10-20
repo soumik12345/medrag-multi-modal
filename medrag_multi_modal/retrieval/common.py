@@ -29,6 +29,7 @@ def argsort_scores(scores: list[float], descending: bool = False):
 
 def save_vector_index(
     vector_index: torch.Tensor,
+    type: str,
     index_name: str,
     metadata: dict,
     filename: str = "vector_index.safetensors",
@@ -37,7 +38,7 @@ def save_vector_index(
     if wandb.run:
         artifact = wandb.Artifact(
             name=index_name,
-            type="contriever-index",
+            type=type,
             metadata=metadata,
         )
         artifact.add_file(filename)
