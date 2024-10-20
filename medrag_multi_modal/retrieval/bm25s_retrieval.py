@@ -104,6 +104,20 @@ class BM25sRetriever(weave.Model):
         initialize the class instance with the appropriate language and stemming
         settings.
 
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval import BM25sRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = BM25sRetriever.from_wandb_artifact(
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:latest"
+            )
+            ```
+
         Args:
             index_artifact_address (str): The address of the Weights & Biases artifact
                 containing the BM25 index.
@@ -121,8 +135,9 @@ class BM25sRetriever(weave.Model):
             api = wandb.Api()
             artifact = api.artifact(index_artifact_address)
             artifact_dir = artifact.download()
-        index_name = glob(os.path.join(artifact_dir, "*"))[0].split("/")[-1]
-        retriever = bm25s.BM25.load(index_name, load_corpus=True)
+        retriever = bm25s.BM25.load(
+            glob(os.path.join(artifact_dir, "*"))[0], load_corpus=True
+        )
         metadata = artifact.metadata
         return cls(
             language=metadata["language"],
@@ -183,7 +198,7 @@ class BM25sRetriever(weave.Model):
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
             retriever = BM25sRetriever.from_wandb_artifact(
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:v2"
+                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:latest"
             )
             retrieved_chunks = retriever.predict(query="What are Ribosomes?")
             ```
