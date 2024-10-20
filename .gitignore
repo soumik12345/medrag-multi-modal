@@ -20,3 +20,4 @@ test.py
 uv.lock
 grays-anatomy-bm25s/
 prompt**.txt
+**.safetensors

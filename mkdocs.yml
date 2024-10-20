@@ -74,5 +74,6 @@ nav:
   - Retrieval:
     - BM25-Sparse: 'retreival/bm25s.md'
     - ColPali: 'retreival/colpali.md'
+    - Contriever: 'retreival/contriever.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal
