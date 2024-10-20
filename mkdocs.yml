@@ -74,6 +74,8 @@ nav:
       - PDF2Image: 'document_loader/image_loader/pdf2image_img_loader.md'
       - Marker: 'document_loader/image_loader/marker_img_loader.md'
       - PDFPlumber: 'document_loader/image_loader/pdfplumber_img_loader.md'
+      - PyMuPDF: 'document_loader/image_loader/pymupdf_img_loader.md'
+      - FitzPIL: 'document_loader/image_loader/fitzpil_img_loader.md'
   - Chunking: 'chunking.md'
   - Retrieval:
     - Multi-Modal Retrieval: 'retreival/multi_modal_retrieval.md'
