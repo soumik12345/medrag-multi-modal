@@ -36,7 +36,7 @@ class MarkerImageLoader(BaseImageLoader):
             loader.load_data(
                 start_page=31,
                 end_page=36,
-                wandb_artifact_name="grays-anatomy-images",
+                wandb_artifact_name="grays-anatomy-images-marker",
                 cleanup=False,
             )
         )

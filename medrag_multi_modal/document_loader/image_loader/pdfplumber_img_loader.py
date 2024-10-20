@@ -35,7 +35,7 @@ class PDFPlumberImageLoader(BaseImageLoader):
             loader.load_data(
                 start_page=32,
                 end_page=37,
-                wandb_artifact_name="grays-anatomy-images",
+                wandb_artifact_name="grays-anatomy-images-pdfplumber",
                 cleanup=False,
             )
         )
