@@ -22,7 +22,8 @@ def get_wandb_artifact(
 
 def get_torch_backend():
     if torch.cuda.is_available():
-        return "cuda"
+        if torch.backends.cuda.is_built():
+            return "cuda"
     if torch.backends.mps.is_available():
         if torch.backends.mps.is_built():
             return "mps"
