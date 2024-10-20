@@ -3,17 +3,17 @@ import os
 from typing import Any, Dict
 
 import fitz
-from PIL import Image
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .base_img_loader import BaseImageLoader
 
 
-class PyMuPDFImageLoader(BaseImageLoader):
+class FitzPILImageLoader(BaseImageLoader):
     """
-    `PyMuPDFImageLoader` is a class that extends the `BaseImageLoader` class to handle the extraction and
-    loading of pages from a PDF file as images using the pymupdf library.
+    `FitzPILImageLoader` is a class that extends the `BaseImageLoader` class to handle the extraction and
+    loading of pages from a PDF file as images using the fitz and PIL libraries.
 
-    This class provides functionality to extract images from a PDF file using pymupdf library,
+    This class provides functionality to extract images from a PDF file using fitz and PIL libraries,
     and optionally publish these images to a WandB artifact.
 
     !!! example "Example Usage"
@@ -23,12 +23,12 @@ class PyMuPDFImageLoader(BaseImageLoader):
         import weave
 
         import wandb
-        from medrag_multi_modal.document_loader.image_loader import PyMuPDFImageLoader
+        from medrag_multi_modal.document_loader.image_loader import FitzPILImageLoader
 
         weave.init(project_name="ml-colabs/medrag-multi-modal")
         wandb.init(project="medrag-multi-modal", entity="ml-colabs")
         url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
-        loader = PyMuPDFImageLoader(
+        loader = FitzPILImageLoader(
             url=url,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
@@ -56,12 +56,12 @@ class PyMuPDFImageLoader(BaseImageLoader):
         self, page_idx: int, image_save_dir: str, **kwargs
     ) -> Dict[str, Any]:
         """
-        Extracts a single page from the PDF as an image using pymupdf library.
+        Extracts a single page from the PDF as an image using fitz and PIL libraries.
 
         Args:
             page_idx (int): The index of the page to process.
             image_save_dir (str): The directory to save the extracted image.
-            **kwargs: Additional keyword arguments that may be used by pymupdf.
+            **kwargs: Additional keyword arguments that may be used by fitz and PIL.
 
         Returns:
             Dict[str, Any]: A dictionary containing the processed page data.
@@ -76,7 +76,7 @@ class PyMuPDFImageLoader(BaseImageLoader):
         image_file_paths = []
 
         pdf_document = fitz.open(self.document_file_path)
-        page = pdf_document[page_idx]
+        page = pdf_document.load_page(page_idx)
 
         images = page.get_images(full=True)
         for img_idx, image in enumerate(images):
@@ -85,33 +85,36 @@ class PyMuPDFImageLoader(BaseImageLoader):
             image_bytes = base_image["image"]
             image_ext = base_image["ext"]
 
-            if image_ext == "jb2":
-                image_ext = "png"
-            elif image_ext == "jpx":
-                image_ext = "jpg"
+            try:
+                img = Image.open(io.BytesIO(image_bytes))
 
-            image_file_name = f"page{page_idx}_fig{img_idx}.{image_ext}"
-            image_file_path = os.path.join(image_save_dir, image_file_name)
+                if img.mode in ["L"]:
+                    # images in greyscale looks inverted, need to test on other PDFs
+                    img = ImageOps.invert(img)
 
-            # For JBIG2 and JPEG2000, we need to convert the image
-            if base_image["ext"] in ["jb2", "jpx"]:
-                try:
-                    pix = fitz.Pixmap(image_bytes)
-                    pix.save(image_file_path)
-                except Exception as err_fitz:
-                    print(f"Error processing image with fitz: {err_fitz}")
-                    # Fallback to using PIL for image conversion
-                    try:
-                        img = Image.open(io.BytesIO(image_bytes))
-                        img.save(image_file_path)
-                    except Exception as err_pil:
-                        print(f"Failed to process image with PIL: {err_pil}")
-                        continue  # Skip this image if both methods fail
-            else:
-                with open(image_file_path, "wb") as image_file:
-                    image_file.write(image_bytes)
+                if img.mode == "CMYK":
+                    img = img.convert("RGB")
 
-            image_file_paths.append(image_file_path)
+                if image_ext not in ["png", "jpg", "jpeg"]:
+                    image_ext = "png"
+                    image_file_name = f"page{page_idx}_fig{img_idx}.png"
+                    image_file_path = os.path.join(image_save_dir, image_file_name)
+
+                    img.save(image_file_path, format="PNG")
+                else:
+                    image_file_name = f"page{page_idx}_fig{img_idx}.{image_ext}"
+                    image_file_path = os.path.join(image_save_dir, image_file_name)
+
+                    with open(image_file_path, "wb") as image_file:
+                        image_file.write(image_bytes)
+
+                image_file_paths.append(image_file_path)
+
+            except (UnidentifiedImageError, OSError) as e:
+                print(
+                    f"Skipping image at page {page_idx}, fig {img_idx} due to an error: {e}"
+                )
+                continue
 
         pdf_document.close()
 
