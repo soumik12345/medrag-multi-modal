@@ -50,6 +50,7 @@ class MarkerImageLoader(BaseImageLoader):
 
     def __init__(self, url: str, document_name: str, document_file_path: str):
         super().__init__(url, document_name, document_file_path)
+        self.model_lst = load_all_models()
 
     async def extract_page_data(
         self, page_idx: int, image_save_dir: str, **kwargs
@@ -72,11 +73,9 @@ class MarkerImageLoader(BaseImageLoader):
             - "file_url": (str) the URL of the PDF file.
             - "image_file_path": (str) the local file path where the image is stored.
         """
-        model_lst = load_all_models()
-
         _, images, out_meta = convert_single_pdf(
             self.document_file_path,
-            model_lst,
+            self.model_lst,
             max_pages=1,
             batch_multiplier=1,
             start_page=page_idx,
