@@ -15,7 +15,7 @@ from transformers import (
 
 import wandb
 
-from ..utils import get_wandb_artifact
+from ..utils import get_wandb_artifact, get_torch_backend
 from .common import SimilarityMetric, argsort_scores, mean_pooling
 
 
@@ -150,7 +150,7 @@ class ContrieverRetriever(weave.Model):
             os.path.join(artifact_dir, "vector_index.safetensors"), framework="pt"
         ) as f:
             vector_index = f.get_tensor("vector_index")
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device(get_torch_backend())
         vector_index = vector_index.to(device)
         chunk_dataset = [dict(row) for row in weave.ref(chunk_dataset_name).get().rows]
         return cls(
@@ -199,7 +199,7 @@ class ContrieverRetriever(weave.Model):
             list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
         """
         query = [query]
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device(get_torch_backend())
         with torch.no_grad():
             query_embedding = self.encode(query).to(device)
             if metric == SimilarityMetric.EUCLIDEAN:

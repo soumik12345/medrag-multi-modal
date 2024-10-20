@@ -1,3 +1,4 @@
+import torch
 import wandb
 
 
@@ -14,3 +15,13 @@ def get_wandb_artifact(
     if get_metadata:
         return artifact_dir, artifact.metadata
     return artifact_dir
+
+
+def get_torch_backend():
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        if torch.backends.mps.is_built():
+            return "mps"
+        return "cpu"
+    return "cpu"
