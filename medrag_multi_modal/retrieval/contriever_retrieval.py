@@ -15,7 +15,8 @@ from transformers import (
 
 import wandb
 
-from .common import SimilarityMetric, argsort_scores, get_wandb_artifact, mean_pooling
+from ..utils import get_wandb_artifact
+from .common import SimilarityMetric, argsort_scores, mean_pooling
 
 
 class ContrieverRetriever(weave.Model):
@@ -143,7 +144,7 @@ class ContrieverRetriever(weave.Model):
             and chunk dataset.
         """
         artifact_dir, metadata = get_wandb_artifact(
-            index_artifact_address, "contriever-index"
+            index_artifact_address, "contriever-index", get_metadata=True
         )
         with safetensors.torch.safe_open(
             os.path.join(artifact_dir, "vector_index.safetensors"), framework="pt"
