@@ -59,7 +59,7 @@ class CalPaliRetriever(weave.Model):
         from medrag_multi_modal.retrieval import CalPaliRetriever
 
         weave.init(project_name="ml-colabs/medrag-multi-modal")
-        retriever = CalPaliRetriever.from_artifact(
+        retriever = CalPaliRetriever.from_wandb_artifact(
             index_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy:v0",
             metadata_dataset_name="grays-anatomy-images:v0",
             data_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy-images:v1",
@@ -100,7 +100,7 @@ class CalPaliRetriever(weave.Model):
         )
 
     @classmethod
-    def from_artifact(
+    def from_wandb_artifact(
         cls,
         index_artifact_name: str,
         metadata_dataset_name: str,
