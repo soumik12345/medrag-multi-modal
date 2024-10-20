@@ -66,7 +66,7 @@ class ContrieverRetriever(weave.Model):
         resulting vector index. If an index name is provided, the vector index is saved to
         a file in the safetensors format. Additionally, if a Weave run is active, the vector
         index file is logged as an artifact to Weave.
-        
+
         !!! example "Example Usage"
             ```python
             import weave
@@ -117,7 +117,7 @@ class ContrieverRetriever(weave.Model):
         appropriate device (CPU or GPU). The text chunks are converted into a list of
         dictionaries. The method then returns an instance of the class initialized with
         the retrieved model name, vector index, and chunk dataset.
-        
+
         !!! example "Example Usage"
             ```python
             import weave
@@ -172,7 +172,7 @@ class ContrieverRetriever(weave.Model):
         the query embedding and the precomputed vector index. The similarity metric can be either
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
-        
+
         !!! example "Example Usage"
             ```python
             import weave
