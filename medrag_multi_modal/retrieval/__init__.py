@@ -3,6 +3,7 @@ from .colpali_retrieval import CalPaliRetriever
 from .common import SimilarityMetric
 from .contriever_retrieval import ContrieverRetriever
 from .medcpt_retrieval import MedCPTRetriever
+from .nv_embed_2 import NVEmbed2Retriever
 
 __all__ = [
     "CalPaliRetriever",
@@ -10,4 +11,5 @@ __all__ = [
     "ContrieverRetriever",
     "SimilarityMetric",
     "MedCPTRetriever",
+    "NVEmbed2Retriever",
 ]

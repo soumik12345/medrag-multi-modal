@@ -7,6 +7,8 @@ requires-python = ">=3.10"
 dependencies = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
+    "datasets>=3.0.1",
+    "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",
     "pdf2image>=1.17.0",
@@ -35,12 +37,15 @@ dependencies = [
     "pdfplumber>=0.11.4",
     "semchunk>=2.2.0",
     "tiktoken>=0.8.0",
+    "sentence-transformers>=3.2.0",
 ]
 
 [project.optional-dependencies]
 core = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
+    "datasets>=3.0.1",
+    "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",
     "marker-pdf>=0.2.17",
@@ -55,6 +60,7 @@ core = [
     "tiktoken>=0.8.0",
     "torch>=2.4.1",
     "weave>=0.51.14",
+    "sentence-transformers>=3.2.0",
 ]
 
 dev = ["pytest>=8.3.3", "isort>=5.13.2", "black>=24.10.0", "ruff>=0.6.9"]
