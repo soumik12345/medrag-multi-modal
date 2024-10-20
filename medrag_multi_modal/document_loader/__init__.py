@@ -1,5 +1,10 @@
-from .load_image import ImageLoader
-from .load_text_image import TextImageLoader
+from .image_loader import (
+    FitzPILImageLoader,
+    MarkerImageLoader,
+    PDF2ImageLoader,
+    PDFPlumberImageLoader,
+    PyMuPDFImageLoader,
+)
 from .text_loader import (
     MarkerTextLoader,
     PDFPlumberTextLoader,
@@ -12,6 +17,9 @@ __all__ = [
     "PyPDF2TextLoader",
     "PDFPlumberTextLoader",
     "MarkerTextLoader",
-    "ImageLoader",
-    "TextImageLoader",
+    "PDF2ImageLoader",
+    "MarkerImageLoader",
+    "PDFPlumberImageLoader",
+    "PyMuPDFImageLoader",
+    "FitzPILImageLoader",
 ]
