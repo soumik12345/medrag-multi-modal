@@ -83,6 +83,14 @@ class NVEmbed2Retriever(weave.Model):
                 index_name="grays-anatomy-nvembed2",
             )
             ```
+        
+        ??? note "Optional Speedup using Flash Attention"
+            If you have a GPU with Flash Attention support, you can enable it for NV-Embed-v2 by simply
+            installing the `flash-attn` package.
+            
+            ```bash
+            uv pip install flash-attn --no-build-isolation
+            ```
 
         Args:
             chunk_dataset_name (str): The name of the Weave dataset containing the text chunks
@@ -135,6 +143,14 @@ class NVEmbed2Retriever(weave.Model):
                 chunk_dataset_name="grays-anatomy-chunks:v0",
                 index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-nvembed2:v0",
             )
+            ```
+        
+        ??? note "Optional Speedup using Flash Attention"
+            If you have a GPU with Flash Attention support, you can enable it for NV-Embed-v2 by simply
+            installing the `flash-attn` package.
+            
+            ```bash
+            uv pip install flash-attn --no-build-isolation
             ```
 
         Args:
@@ -241,6 +257,14 @@ class NVEmbed2Retriever(weave.Model):
                 index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-nvembed2:v0",
             )
             retriever.predict(query="What are Ribosomes?")
+            ```
+        
+        ??? note "Optional Speedup using Flash Attention"
+            If you have a GPU with Flash Attention support, you can enable it for NV-Embed-v2 by simply
+            installing the `flash-attn` package.
+            
+            ```bash
+            uv pip install flash-attn --no-build-isolation
             ```
 
         Args:
