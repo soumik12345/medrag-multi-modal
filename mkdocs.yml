@@ -78,6 +78,10 @@ nav:
       - FitzPIL: 'document_loader/image_loader/fitzpil_img_loader.md'
   - Chunking: 'chunking.md'
   - Retrieval:
-    - Multi-Modal Retrieval: 'retreival/multi_modal_retrieval.md'
+    - BM25-Sparse: 'retreival/bm25s.md'
+    - ColPali: 'retreival/colpali.md'
+    - Contriever: 'retreival/contriever.md'
+    - MedCPT: 'retreival/medcpt.md'
+    - NV-Embed-v2: 'retreival/nv_embed_2.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal
