@@ -49,7 +49,7 @@ class CalPaliRetriever(weave.Model):
             if metadata_dataset_name
             else None
         )
-    
+
     def index(self, data_artifact_name: str, weave_dataset_name: str, index_name: str):
         """
         Indexes a dataset of documents and saves the index as a Weave artifact.
@@ -62,7 +62,7 @@ class CalPaliRetriever(weave.Model):
         If a Weave run is active, the method creates a new Weave artifact with the specified
         index name and type "colpali-index". It adds the local index directory to the artifact
         and saves it to Weave, including metadata with the provided Weave dataset name.
-        
+
         !!! example "Indexing Data"
             First you need to install `Byaldi` library by Answer.ai.
 
@@ -84,11 +84,11 @@ class CalPaliRetriever(weave.Model):
                 index_name="grays-anatomy",
             )
             ```
-        
+
         ??? note "Optional Speedup using Flash Attention"
             If you have a GPU with Flash Attention support, you can enable it for ColPali by simply
             installing the `flash-attn` package.
-            
+
             ```bash
             uv pip install flash-attn --no-build-isolation
             ```
@@ -132,7 +132,7 @@ class CalPaliRetriever(weave.Model):
         model from the index path within the index artifact directory. Finally, it returns
         an instance of the class initialized with the retrieved document retrieval model,
         metadata dataset name, and data artifact directory.
-        
+
         !!! example "Retrieving Documents"
             First you need to install `Byaldi` library by Answer.ai.
 
@@ -155,11 +155,11 @@ class CalPaliRetriever(weave.Model):
                 data_artifact_name="ml-colabs/medrag-multi-modal/grays-anatomy-images:v1",
             )
             ```
-        
+
         ??? note "Optional Speedup using Flash Attention"
             If you have a GPU with Flash Attention support, you can enable it for ColPali by simply
             installing the `flash-attn` package.
-            
+
             ```bash
             uv pip install flash-attn --no-build-isolation
             ```
@@ -195,7 +195,7 @@ class CalPaliRetriever(weave.Model):
         This function uses the document retrieval model to search for the most relevant
         documents based on the provided query. It returns a list of dictionaries, each
         containing the document image, document ID, and the relevance score.
-        
+
         !!! example "Retrieving Documents"
             First you need to install `Byaldi` library by Answer.ai.
 
@@ -222,11 +222,11 @@ class CalPaliRetriever(weave.Model):
                 top_k=3,
             )
             ```
-            
+
         ??? note "Optional Speedup using Flash Attention"
             If you have a GPU with Flash Attention support, you can enable it for ColPali by simply
             installing the `flash-attn` package.
-            
+
             ```bash
             uv pip install flash-attn --no-build-isolation
             ```
