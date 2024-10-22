@@ -38,6 +38,9 @@ dependencies = [
     "semchunk>=2.2.0",
     "tiktoken>=0.8.0",
     "sentence-transformers>=3.2.0",
+    "google-generativeai>=0.8.3",
+    "mistralai>=1.1.0",
+    "instructor>=1.6.3",
 ]
 
 [project.optional-dependencies]
@@ -61,6 +64,9 @@ core = [
     "torch>=2.4.1",
     "weave>=0.51.14",
     "sentence-transformers>=3.2.0",
+    "google-generativeai>=0.8.3",
+    "mistralai>=1.1.0",
+    "instructor>=1.6.3",
 ]
 
 dev = ["pytest>=8.3.3", "isort>=5.13.2", "black>=24.10.0", "ruff>=0.6.9"]
