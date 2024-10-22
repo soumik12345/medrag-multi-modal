@@ -57,17 +57,22 @@ class LLMClient(weave.Model):
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
         )
         user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
-        messages = [{"type": "text", "text": prompt} for prompt in system_prompt]
+        system_messages = [{"type": "text", "text": prompt} for prompt in system_prompt]
+        user_messages = []
         for prompt in user_prompt:
             if isinstance(prompt, Image.Image):
-                messages.append(
+                user_messages.append(
                     {
                         "type": "image_url",
                         "image_url": base64_encode_image(prompt, "image/png"),
                     }
                 )
             else:
-                messages.append({"type": "text", "text": prompt})
+                user_messages.append({"type": "text", "text": prompt})
+        messages = [
+            {"role": "system", "content": system_messages},
+            {"role": "user", "content": user_messages},
+        ]
 
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client)
