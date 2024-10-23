@@ -29,7 +29,7 @@ class LLMClient(weave.Model):
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
         import google.generativeai as genai
-        
+
         system_prompt = (
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
         )
