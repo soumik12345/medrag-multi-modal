@@ -131,6 +131,7 @@ class BaseTextLoader(ABC):
         async def process_page(page_idx):
             nonlocal processed_pages_counter
             page_data = await self.extract_page_data(page_idx, **kwargs)
+            page_data["loader_name"] = self.__class__.__name__
             pages.append(page_data)
             rich.print(
                 f"Processed page idx: {page_idx}, progress: {processed_pages_counter}/{total_pages}"

@@ -6,6 +6,8 @@ from marker.models import load_all_models
 
 from .base_img_loader import BaseImageLoader
 
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
 
 class MarkerImageLoader(BaseImageLoader):
     """

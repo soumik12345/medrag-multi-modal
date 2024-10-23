@@ -100,7 +100,11 @@ class BaseImageLoader(BaseTextLoader):
             await task
 
         if wandb_artifact_name:
-            artifact = wandb.Artifact(name=wandb_artifact_name, type="dataset")
+            artifact = wandb.Artifact(
+                name=wandb_artifact_name,
+                type="dataset",
+                metadata={"loader_name": self.__class__.__name__},
+            )
             artifact.add_dir(local_path=image_save_dir)
             artifact.save()
             rich.print("Artifact saved and uploaded to wandb!")
