@@ -17,6 +17,7 @@ wandb/
 .byaldi/
 cursor_prompt.txt
 test.py
+test.ipynb
 uv.lock
 grays-anatomy-bm25s/
 prompt**.txt

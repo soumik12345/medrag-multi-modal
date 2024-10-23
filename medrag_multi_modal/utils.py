@@ -1,6 +1,7 @@
 import base64
 import io
 
+import jsonlines
 import torch
 from PIL import Image
 
@@ -36,8 +37,17 @@ def get_torch_backend():
 
 
 def base64_encode_image(image: Image.Image, mimetype: str) -> str:
+    image.load()
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGB")
     byte_arr = io.BytesIO()
     image.save(byte_arr, format="PNG")
     encoded_string = base64.b64encode(byte_arr.getvalue()).decode("utf-8")
     encoded_string = f"data:{mimetype};base64,{encoded_string}"
     return str(encoded_string)
+
+
+def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
+    with jsonlines.open(file_path) as reader:
+        for obj in reader:
+            return obj

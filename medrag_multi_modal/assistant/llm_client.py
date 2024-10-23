@@ -9,7 +9,7 @@ from PIL import Image
 from ..utils import base64_encode_image
 
 
-class ClientType(Enum, str):
+class ClientType(str, Enum):
     GEMINI = "gemini"
     MISTRAL = "mistral"
 
@@ -80,7 +80,7 @@ class LLMClient(weave.Model):
         ]
 
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
-        client = instructor.from_mistral(client)
+        client = instructor.from_mistral(client) if schema is not None else client
 
         response = (
             client.chat.complete(model=self.model_name, messages=messages)
