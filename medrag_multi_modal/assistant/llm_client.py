@@ -29,9 +29,14 @@ class LLMClient(weave.Model):
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
         import google.generativeai as genai
+        
+        system_prompt = (
+            [system_prompt] if isinstance(system_prompt, str) else system_prompt
+        )
+        user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
+        model = genai.GenerativeModel(self.model_name)
         generation_config = (
             None
             if schema is None
@@ -40,7 +45,7 @@ class LLMClient(weave.Model):
             )
         )
         response = model.generate_content(
-            user_prompt, generation_config=generation_config
+            system_prompt + user_prompt, generation_config=generation_config
         )
         return response.text if schema is None else response
 
