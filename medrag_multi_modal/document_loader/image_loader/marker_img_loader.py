@@ -1,8 +1,9 @@
 import os
-from typing import Any, Dict
+from typing import Any, Coroutine, Dict, List
 
 from marker.convert import convert_single_pdf
 from marker.models import load_all_models
+from pdf2image.pdf2image import convert_from_path
 
 from .base_img_loader import BaseImageLoader
 
@@ -48,10 +49,18 @@ class MarkerImageLoader(BaseImageLoader):
         url (str): The URL of the PDF document.
         document_name (str): The name of the document.
         document_file_path (str): The path to the PDF file.
+        save_page_image (bool): Whether to additionally save the image of the entire page.
     """
 
-    def __init__(self, url: str, document_name: str, document_file_path: str):
+    def __init__(
+        self,
+        url: str,
+        document_name: str,
+        document_file_path: str,
+        save_page_image: bool = False,
+    ):
         super().__init__(url, document_name, document_file_path)
+        self.save_page_image = save_page_image
         self.model_lst = load_all_models()
 
     async def extract_page_data(
@@ -92,6 +101,15 @@ class MarkerImageLoader(BaseImageLoader):
             image.save(image_file_path, "png")
             image_file_paths.append(image_file_path)
 
+        if self.save_page_image:
+            page_image = convert_from_path(
+                self.document_file_path,
+                first_page=page_idx + 1,
+                last_page=page_idx + 1,
+                **kwargs,
+            )[0]
+            page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
+
         return {
             "page_idx": page_idx,
             "document_name": self.document_name,
@@ -100,3 +118,25 @@ class MarkerImageLoader(BaseImageLoader):
             "image_file_paths": os.path.join(image_save_dir, "*.png"),
             "meta": out_meta,
         }
+
+    def load_data(
+        self,
+        start_page: int | None = None,
+        end_page: int | None = None,
+        wandb_artifact_name: str | None = None,
+        image_save_dir: str = "./images",
+        exclude_file_extensions: list[str] = [],
+        cleanup: bool = False,
+        **kwargs,
+    ) -> Coroutine[Any, Any, List[Dict[str, str]]]:
+        start_page = start_page - 1 if start_page is not None else None
+        end_page = end_page - 1 if end_page is not None else None
+        return super().load_data(
+            start_page,
+            end_page,
+            wandb_artifact_name,
+            image_save_dir,
+            exclude_file_extensions,
+            cleanup,
+            **kwargs,
+        )
