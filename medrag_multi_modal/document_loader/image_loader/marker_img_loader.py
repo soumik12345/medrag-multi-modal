@@ -97,6 +97,6 @@ class MarkerImageLoader(BaseImageLoader):
             "document_name": self.document_name,
             "file_path": self.document_file_path,
             "file_url": self.url,
-            "image_file_paths": image_file_paths,
+            "image_file_paths": os.path.join(image_save_dir, "*.png"),
             "meta": out_meta,
         }

@@ -41,6 +41,7 @@ dependencies = [
     "google-generativeai>=0.8.3",
     "mistralai>=1.1.0",
     "instructor>=1.6.3",
+    "jsonlines>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -67,6 +68,7 @@ core = [
     "google-generativeai>=0.8.3",
     "mistralai>=1.1.0",
     "instructor>=1.6.3",
+    "jsonlines>=4.0.0",
 ]
 
 dev = ["pytest>=8.3.3", "isort>=5.13.2", "black>=24.10.0", "ruff>=0.6.9"]

@@ -3,6 +3,7 @@ import os
 from abc import abstractmethod
 from typing import Dict, List, Optional
 
+import jsonlines
 import rich
 
 import wandb
@@ -41,7 +42,8 @@ class BaseImageLoader(BaseTextLoader):
         end_page: Optional[int] = None,
         wandb_artifact_name: Optional[str] = None,
         image_save_dir: str = "./images",
-        cleanup: bool = True,
+        exclude_file_extensions: list[str] = [],
+        cleanup: bool = False,
         **kwargs,
     ) -> List[Dict[str, str]]:
         """
@@ -61,10 +63,11 @@ class BaseImageLoader(BaseTextLoader):
         If a wandb_artifact_name is provided, the processed pages are published to a WandB artifact.
 
         Args:
-            start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
-            end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            start_page (Optional[int]): The starting page index (0-based) to process.
+            end_page (Optional[int]): The ending page index (0-based) to process.
             wandb_artifact_name (Optional[str]): The name of the WandB artifact to publish the pages to, if provided.
             image_save_dir (str): The directory to save the extracted images.
+            exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
             cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
@@ -98,6 +101,15 @@ class BaseImageLoader(BaseTextLoader):
         tasks = [process_page(page_idx) for page_idx in range(start_page, end_page)]
         for task in asyncio.as_completed(tasks):
             await task
+
+        with jsonlines.open(
+            os.path.join(image_save_dir, "metadata.jsonl"), mode="w"
+        ) as writer:
+            writer.write(pages)
+
+        for file in os.listdir(image_save_dir):
+            if file.endswith(tuple(exclude_file_extensions)):
+                os.remove(os.path.join(image_save_dir, file))
 
         if wandb_artifact_name:
             artifact = wandb.Artifact(
