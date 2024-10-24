@@ -20,22 +20,24 @@ class FigureAnnotatorFromPageImage(weave.Model):
         annotation = self.llm_client.predict(
             system_prompt="""
 You are an expert in the domain of scientific textbooks, especially medical texts.
-You are presented with a page from a scientific textbook.
-You are to first identify the number of figures in the image.
-Then you are to identify the figure IDs associated with each figure in the image.
-Then, you are to extract the exact figure descriptions from the image.
-You need to output the figure IDs and descriptions in a structured manner as a JSON object.
+You are presented with a page from a scientific textbook from the domain of biology, specifically anatomy.
+You are to first identify all the figures in the page image, which could be images or biological diagrams, charts, graphs, etc.
+Then you are to identify the figure IDs associated with each figure in the page image.
+Then, you are to extract only the exact figure descriptions from the page image.
+You need to output the figure IDs and figure descriptions only, in a structured manner as a JSON object.
 
 Here are some clues you need to follow:
-1. Figure IDs are unique identifiers for each figure in the image.
+1. Figure IDs are unique identifiers for each figure in the page image.
 2. Sometimes figure IDs can also be found as captions to the immediate left, right, top, or bottom of the figure.
 3. Figure IDs are in the form "Fig X.Y" where X and Y are integers. For example, 1.1, 1.2, 1.3, etc.
 4. Figure descriptions are contained as captions under the figures in the image, just after the figure ID.
-5. The text in the image is written in English and is present in a two-column format.
-6. There is a clear distinction between the figure caption and the regular text in the image in the form of extra white space.
-7. There might be multiple figures present in the image.
+5. The text in the page image is written in English and is present in a two-column format.
+6. There is a clear distinction between the figure caption and the regular text in the page image in the form of extra white space.
+    You are to carefully identify all the figures in the page image.
+7. There might be multiple figures or even no figures present in the page image. Sometimes the figures can be present side-by-side
+    or one above the other.
 8. The figures may or may not have a distinct border against a white background.
-9. There might be multiple figures present in the image. You are to carefully identify all the figures in the image.
+10. You are not supposed to alter the figure description in any way present in the page image and you are to extract it as is.
 """,
             user_prompt=[page_image],
         )
