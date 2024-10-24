@@ -175,7 +175,7 @@ class BM25sRetriever(weave.Model):
             results.documents.flatten().tolist(),
             results.scores.flatten().tolist(),
         ):
-            retrieved_chunks.append({"chunk": chunk, "score": score})
+            retrieved_chunks.append({**chunk, **{"score": score}})
         return retrieved_chunks
 
     @weave.op()

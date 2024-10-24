@@ -83,5 +83,9 @@ nav:
     - Contriever: 'retreival/contriever.md'
     - MedCPT: 'retreival/medcpt.md'
     - NV-Embed-v2: 'retreival/nv_embed_2.md'
+  - Assistant:
+    - MedQA Assistant: 'assistant/medqa_assistant.md'
+    - Figure Annotation: 'assistant/figure_annotation.md'
+    - LLM Client: 'assistant/llm_client.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal

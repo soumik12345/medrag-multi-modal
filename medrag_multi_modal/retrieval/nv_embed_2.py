@@ -217,8 +217,8 @@ class NVEmbed2Retriever(weave.Model):
         for score in scores:
             retrieved_chunks.append(
                 {
-                    "chunk": self._chunk_dataset[score["original_index"]],
-                    "score": score["item"],
+                    **self._chunk_dataset[score["original_index"]],
+                    **{"score": score["item"]},
                 }
             )
         return retrieved_chunks
