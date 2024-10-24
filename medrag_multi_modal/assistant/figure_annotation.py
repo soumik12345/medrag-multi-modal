@@ -4,20 +4,31 @@ from typing import Union
 import cv2
 import weave
 from PIL import Image
+from pydantic import BaseModel
 from rich.progress import track
 
 from ..utils import get_wandb_artifact, read_jsonl_file
 from .llm_client import LLMClient
 
 
+class FigureAnnotation(BaseModel):
+    figure_id: str
+    figure_description: str
+
+
+class FigureAnnotations(BaseModel):
+    annotations: list[FigureAnnotation]
+
+
 class FigureAnnotatorFromPageImage(weave.Model):
-    llm_client: LLMClient
+    figure_extraction_llm_client: LLMClient
+    structured_output_llm_client: LLMClient
 
     @weave.op()
     def annotate_figures(
         self, page_image: Image.Image
     ) -> dict[str, Union[Image.Image, str]]:
-        annotation = self.llm_client.predict(
+        annotation = self.figure_extraction_llm_client.predict(
             system_prompt="""
 You are an expert in the domain of scientific textbooks, especially medical texts.
 You are presented with a page from a scientific textbook from the domain of biology, specifically anatomy.
@@ -43,16 +54,27 @@ Here are some clues you need to follow:
         )
         return {"page_image": page_image, "annotations": annotation}
 
+    @weave.op
+    def extract_structured_output(self, annotations: str) -> FigureAnnotations:
+        return self.structured_output_llm_client.predict(
+            system_prompt="You are suppossed to extract a list of figure annotations consisting of figure IDs and corresponding figure descriptions.",
+            user_prompt=[annotations],
+            schema=FigureAnnotations,
+        )
+
     @weave.op()
     def predict(self, image_artifact_address: str):
         artifact_dir = get_wandb_artifact(image_artifact_address, "dataset")
         metadata = read_jsonl_file(os.path.join(artifact_dir, "metadata.jsonl"))
         annotations = []
         for item in track(metadata, description="Annotating images:"):
-            page_image = cv2.imread(
-                os.path.join(artifact_dir, f"page{item['page_idx']}.png")
-            )
+            page_image_file = os.path.join(artifact_dir, f"page{item['page_idx']}.png")
+            page_image = cv2.imread(page_image_file)
             page_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2RGB)
             page_image = Image.fromarray(page_image)
-            annotations.append(self.annotate_figures(page_image=page_image))
+            figure_extracted_annotations = self.annotate_figures(page_image=page_image)
+            figure_extracted_annotations["annotations"] = self.extract_structured_output(
+                figure_extracted_annotations["annotations"]
+            ).model_dump()
+            annotations.append(figure_extracted_annotations)
         return annotations

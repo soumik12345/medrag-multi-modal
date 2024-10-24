@@ -43,6 +43,7 @@ dependencies = [
     "instructor>=1.6.3",
     "jsonlines>=4.0.0",
     "opencv-python>=4.10.0.84",
+    "openai>=1.52.2",
 ]
 
 [project.optional-dependencies]
@@ -71,6 +72,7 @@ core = [
     "instructor>=1.6.3",
     "jsonlines>=4.0.0",
     "opencv-python>=4.10.0.84",
+    "openai>=1.52.2",
 ]
 
 dev = ["pytest>=8.3.3", "isort>=5.13.2", "black>=24.10.0", "ruff>=0.6.9"]
