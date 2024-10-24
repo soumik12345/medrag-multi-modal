@@ -1,4 +1,5 @@
 import os
+from glob import glob
 from typing import Union
 
 import cv2
@@ -69,12 +70,22 @@ Here are some clues you need to follow:
         annotations = []
         for item in track(metadata, description="Annotating images:"):
             page_image_file = os.path.join(artifact_dir, f"page{item['page_idx']}.png")
-            page_image = cv2.imread(page_image_file)
-            page_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2RGB)
-            page_image = Image.fromarray(page_image)
-            figure_extracted_annotations = self.annotate_figures(page_image=page_image)
-            figure_extracted_annotations["annotations"] = self.extract_structured_output(
-                figure_extracted_annotations["annotations"]
-            ).model_dump()
-            annotations.append(figure_extracted_annotations)
+            figure_image_files = glob(
+                os.path.join(artifact_dir, f"page{item['page_idx']}_fig*.png")
+            )
+            if len(figure_image_files) > 0:
+                page_image = cv2.imread(page_image_file)
+                page_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2RGB)
+                page_image = Image.fromarray(page_image)
+                figure_extracted_annotations = self.annotate_figures(
+                    page_image=page_image
+                )
+                annotations.append(
+                    {
+                        "page_idx": item["page_idx"],
+                        "annotations": self.extract_structured_output(
+                            figure_extracted_annotations["annotations"]
+                        ).model_dump(),
+                    }
+                )
         return annotations
