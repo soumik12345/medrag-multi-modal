@@ -1,21 +1,19 @@
-from typing import Optional
 
 import weave
-from PIL import Image
 
 from ..retrieval import SimilarityMetric
 from .llm_client import LLMClient
 
 
 class MedQAAssistant(weave.Model):
+    """Cuming"""
     llm_client: LLMClient
     retriever: weave.Model
     top_k_chunks: int = 2
     retrieval_similarity_metric: SimilarityMetric = SimilarityMetric.COSINE
 
     @weave.op()
-    def predict(self, query: str, image: Optional[Image.Image] = None) -> str:
-        _image = image
+    def predict(self, query: str) -> str:
         retrieved_chunks = self.retriever.predict(
             query, top_k=self.top_k_chunks, metric=self.retrieval_similarity_metric
         )

@@ -22,6 +22,34 @@ class FigureAnnotations(BaseModel):
 
 
 class FigureAnnotatorFromPageImage(weave.Model):
+    """
+    `FigureAnnotatorFromPageImage` is a class that leverages two LLM clients to annotate figures from a page image of a scientific textbook.
+
+    !!! example "Example Usage"
+        ```python
+        import weave
+        from dotenv import load_dotenv
+
+        from medrag_multi_modal.assistant import (
+            FigureAnnotatorFromPageImage, LLMClient
+        )
+
+        load_dotenv()
+        weave.init(project_name="ml-colabs/medrag-multi-modal")
+        figure_annotator = FigureAnnotatorFromPageImage(
+            figure_extraction_llm_client=LLMClient(model_name="pixtral-12b-2409"),
+            structured_output_llm_client=LLMClient(model_name="gpt-4o"),
+        )
+        annotations = figure_annotator.predict(
+            image_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6"
+        )
+        ```
+
+    Attributes:
+        figure_extraction_llm_client (LLMClient): An LLM client used to extract figure annotations from the page image.
+        structured_output_llm_client (LLMClient): An LLM client used to convert the extracted annotations into a structured format.
+    """
+
     figure_extraction_llm_client: LLMClient
     structured_output_llm_client: LLMClient
 
@@ -65,6 +93,22 @@ Here are some clues you need to follow:
 
     @weave.op()
     def predict(self, image_artifact_address: str):
+        """
+        Predicts figure annotations for images in a given artifact directory.
+
+        This function retrieves an artifact directory using the provided image artifact address.
+        It reads metadata from a JSONL file in the artifact directory and iterates over each item in the metadata.
+        For each item, it constructs the file path for the page image and checks for the presence of figure image files.
+        If figure image files are found, it reads and converts the page image, then uses the `annotate_figures` method
+        to extract figure annotations from the page image. The extracted annotations are then structured using the
+        `extract_structured_output` method and appended to the annotations list.
+
+        Args:
+            image_artifact_address (str): The address of the image artifact.
+
+        Returns:
+            list: A list of dictionaries containing page indices and their corresponding figure annotations.
+        """
         artifact_dir = get_wandb_artifact(image_artifact_address, "dataset")
         metadata = read_jsonl_file(os.path.join(artifact_dir, "metadata.jsonl"))
         annotations = []

@@ -59,6 +59,17 @@ OPENAI_MODELS = ["gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-mini", "gpt-4o-mini-2024
 
 
 class LLMClient(weave.Model):
+    """
+    LLMClient is a class that interfaces with different large language model (LLM) providers
+    such as Google Gemini, Mistral, and OpenAI. It abstracts the complexity of interacting with
+    these different APIs and provides a unified interface for making predictions.
+
+    Args:
+        model_name (str): The name of the model to be used for predictions.
+        client_type (Optional[ClientType]): The type of client (e.g., GEMINI, MISTRAL, OPENAI).
+            If not provided, it is inferred from the model_name.
+    """
+
     model_name: str
     client_type: Optional[ClientType]
 
@@ -196,6 +207,26 @@ class LLMClient(weave.Model):
         system_prompt: Optional[Union[str, list[str]]] = None,
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
+        """
+        Predicts the response from a language model based on the provided prompts and schema.
+
+        This function determines the client type and calls the appropriate SDK execution function
+        to get the response from the language model. It supports multiple client types including
+        GEMINI, MISTRAL, and OPENAI. Depending on the client type, it calls the corresponding
+        execution function with the provided user and system prompts, and an optional schema.
+
+        Args:
+            user_prompt (Union[str, list[str]]): The user prompt(s) to be sent to the language model.
+            system_prompt (Optional[Union[str, list[str]]]): The system prompt(s) to be sent to the language model.
+            schema (Optional[Any]): The schema to be used for parsing the response, if applicable.
+
+        Returns:
+            Union[str, Any]: The response from the language model, which could be a string or any other type
+            depending on the schema provided.
+
+        Raises:
+            ValueError: If the client type is invalid.
+        """
         if self.client_type == ClientType.GEMINI:
             return self.execute_gemini_sdk(user_prompt, system_prompt, schema)
         elif self.client_type == ClientType.MISTRAL:
