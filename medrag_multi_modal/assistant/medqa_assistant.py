@@ -17,10 +17,19 @@ class MedQAAssistant(weave.Model):
         retrieved_chunks = self.retriever.predict(
             query, top_k=self.top_k_chunks, metric=self.retrieval_similarity_metric
         )
-        retrieved_chunks = [chunk["text"] for chunk in retrieved_chunks]
+
+        retrieved_chunk_texts = []
+        page_indices = set()
+        for chunk in retrieved_chunks:
+            retrieved_chunk_texts.append(chunk["text"])
+            page_indices.add(int(chunk["page_idx"]))
+        page_numbers = ", ".join(map(str, page_indices))
+
         system_prompt = """
-        You are a medical expert. You are given a query and a list of chunks from a medical document.
+        You are an expert in medical science. You are given a query and a list of chunks from a medical document.
         """
-        return self.llm_client.predict(
-            system_prompt=system_prompt, user_prompt=retrieved_chunks
+        response = self.llm_client.predict(
+            system_prompt=system_prompt, user_prompt=[query, *retrieved_chunk_texts]
         )
+        response += f"\n\n**Source:** {'Pages' if len(page_numbers) > 1 else 'Page'} {page_numbers} from Gray's Anatomy"
+        return response
