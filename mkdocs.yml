@@ -62,6 +62,8 @@ nav:
   - Setup:
     - Installation: 'installation/install.md'
     - Development: 'installation/development.md'
+  - App:
+    - MedQA Assistant: 'app.md'
   - Document Loader:
     - Text Loader:
       - Base: 'document_loader/text_loader/base_text_loader.md'
