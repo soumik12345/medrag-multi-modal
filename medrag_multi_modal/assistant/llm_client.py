@@ -14,11 +14,59 @@ class ClientType(str, Enum):
     MISTRAL = "mistral"
 
 
+GOOGLE_MODELS = [
+    "gemini-1.0-pro-latest",
+    "gemini-1.0-pro",
+    "gemini-pro",
+    "gemini-1.0-pro-001",
+    "gemini-1.0-pro-vision-latest",
+    "gemini-pro-vision",
+    "gemini-1.5-pro-latest",
+    "gemini-1.5-pro-001",
+    "gemini-1.5-pro-002",
+    "gemini-1.5-pro",
+    "gemini-1.5-pro-exp-0801",
+    "gemini-1.5-pro-exp-0827",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash-001",
+    "gemini-1.5-flash-001-tuning",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-exp-0827",
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-flash-8b-001",
+    "gemini-1.5-flash-8b-latest",
+    "gemini-1.5-flash-8b-exp-0827",
+    "gemini-1.5-flash-8b-exp-0924",
+]
+
+MISTRAL_MODELS = [
+    "ministral-3b-latest",
+    "ministral-8b-latest",
+    "mistral-large-latest",
+    "mistral-small-latest",
+    "codestral-latest",
+    "pixtral-12b-2409",
+    "open-mistral-nemo",
+    "open-codestral-mamba",
+    "open-mistral-7b",
+    "open-mixtral-8x7b",
+    "open-mixtral-8x22b",
+]
+
+
 class LLMClient(weave.Model):
     model_name: str
-    client_type: ClientType
+    client_type: Optional[ClientType]
 
-    def __init__(self, model_name: str, client_type: ClientType):
+    def __init__(self, model_name: str, client_type: Optional[ClientType] = None):
+        if client_type is None:
+            if model_name in GOOGLE_MODELS:
+                client_type = ClientType.GEMINI
+            elif model_name in MISTRAL_MODELS:
+                client_type = ClientType.MISTRAL
+            else:
+                raise ValueError(f"Invalid model name: {model_name}")
         super().__init__(model_name=model_name, client_type=client_type)
 
     @weave.op()

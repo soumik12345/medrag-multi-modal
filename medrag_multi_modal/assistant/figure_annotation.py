@@ -10,7 +10,7 @@ from ..utils import get_wandb_artifact, read_jsonl_file
 from .llm_client import LLMClient
 
 
-class FigureAnnotator(weave.Model):
+class FigureAnnotatorFromPageImage(weave.Model):
     llm_client: LLMClient
 
     @weave.op()
@@ -24,6 +24,7 @@ You are presented with a page from a scientific textbook.
 You are to first identify the number of figures in the image.
 Then you are to identify the figure IDs associated with each figure in the image.
 Then, you are to extract the exact figure descriptions from the image.
+You need to output the figure IDs and descriptions in a structured manner as a JSON object.
 
 Here are some clues you need to follow:
 1. Figure IDs are unique identifiers for each figure in the image.
@@ -33,6 +34,8 @@ Here are some clues you need to follow:
 5. The text in the image is written in English and is present in a two-column format.
 6. There is a clear distinction between the figure caption and the regular text in the image in the form of extra white space.
 7. There might be multiple figures present in the image.
+8. The figures may or may not have a distinct border against a white background.
+9. There might be multiple figures present in the image. You are to carefully identify all the figures in the image.
 """,
             user_prompt=[page_image],
         )
