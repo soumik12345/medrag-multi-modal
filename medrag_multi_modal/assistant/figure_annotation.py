@@ -1,12 +1,11 @@
 import os
 from glob import glob
-from typing import Union
+from typing import Optional, Union
 
 import cv2
 import weave
 from PIL import Image
 from pydantic import BaseModel
-from rich.progress import track
 
 from ..utils import get_wandb_artifact, read_jsonl_file
 from .llm_client import LLMClient
@@ -23,7 +22,8 @@ class FigureAnnotations(BaseModel):
 
 class FigureAnnotatorFromPageImage(weave.Model):
     """
-    `FigureAnnotatorFromPageImage` is a class that leverages two LLM clients to annotate figures from a page image of a scientific textbook.
+    `FigureAnnotatorFromPageImage` is a class that leverages two LLM clients to annotate
+    figures from a page image of a scientific textbook.
 
     !!! example "Example Usage"
         ```python
@@ -39,19 +39,35 @@ class FigureAnnotatorFromPageImage(weave.Model):
         figure_annotator = FigureAnnotatorFromPageImage(
             figure_extraction_llm_client=LLMClient(model_name="pixtral-12b-2409"),
             structured_output_llm_client=LLMClient(model_name="gpt-4o"),
+            image_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6",
         )
-        annotations = figure_annotator.predict(
-            image_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6"
-        )
+        annotations = figure_annotator.predict(page_idx=34)
         ```
 
-    Attributes:
-        figure_extraction_llm_client (LLMClient): An LLM client used to extract figure annotations from the page image.
-        structured_output_llm_client (LLMClient): An LLM client used to convert the extracted annotations into a structured format.
+    Args:
+        figure_extraction_llm_client (LLMClient): An LLM client used to extract figure annotations
+            from the page image.
+        structured_output_llm_client (LLMClient): An LLM client used to convert the extracted
+            annotations into a structured format.
+        image_artifact_address (Optional[str]): The address of the image artifact containing the
+            page images.
     """
 
     figure_extraction_llm_client: LLMClient
     structured_output_llm_client: LLMClient
+    _artifact_dir: str
+
+    def __init__(
+        self,
+        figure_extraction_llm_client: LLMClient,
+        structured_output_llm_client: LLMClient,
+        image_artifact_address: Optional[str] = None,
+    ):
+        super().__init__(
+            figure_extraction_llm_client=figure_extraction_llm_client,
+            structured_output_llm_client=structured_output_llm_client,
+        )
+        self._artifact_dir = get_wandb_artifact(image_artifact_address, "dataset")
 
     @weave.op()
     def annotate_figures(
@@ -92,7 +108,7 @@ Here are some clues you need to follow:
         )
 
     @weave.op()
-    def predict(self, page_idx: int, image_artifact_address: str):
+    def predict(self, page_idx: int) -> dict[int, list[FigureAnnotation]]:
         """
         Predicts figure annotations for a specific page in a document.
 
@@ -105,22 +121,23 @@ Here are some clues you need to follow:
 
         Args:
             page_idx (int): The index of the page to annotate.
-            image_artifact_address (str): The address of the image artifact containing the page images.
+            image_artifact_address (str): The address of the image artifact containing the
+                page images.
 
         Returns:
-            dict: A dictionary containing the page index as the key and the extracted figure annotations
-                  as the value.
+            dict: A dictionary containing the page index as the key and the extracted figure
+                annotations as the value.
         """
-        artifact_dir = get_wandb_artifact(image_artifact_address, "dataset")
-        metadata = read_jsonl_file(os.path.join(artifact_dir, "metadata.jsonl"))
+
+        metadata = read_jsonl_file(os.path.join(self._artifact_dir, "metadata.jsonl"))
         annotations = {}
-        for item in track(metadata, description="Annotating images:"):
+        for item in metadata:
             if item["page_idx"] == page_idx:
                 page_image_file = os.path.join(
-                    artifact_dir, f"page{item['page_idx']}.png"
+                    self._artifact_dir, f"page{item['page_idx']}.png"
                 )
                 figure_image_files = glob(
-                    os.path.join(artifact_dir, f"page{item['page_idx']}_fig*.png")
+                    os.path.join(self._artifact_dir, f"page{item['page_idx']}_fig*.png")
                 )
                 if len(figure_image_files) > 0:
                     page_image = cv2.imread(page_image_file)
