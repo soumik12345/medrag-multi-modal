@@ -1,4 +1,3 @@
-
 import weave
 
 from ..retrieval import SimilarityMetric
@@ -7,6 +6,7 @@ from .llm_client import LLMClient
 
 class MedQAAssistant(weave.Model):
     """Cuming"""
+
     llm_client: LLMClient
     retriever: weave.Model
     top_k_chunks: int = 2
