@@ -92,44 +92,48 @@ Here are some clues you need to follow:
         )
 
     @weave.op()
-    def predict(self, image_artifact_address: str):
+    def predict(self, page_idx: int, image_artifact_address: str):
         """
-        Predicts figure annotations for images in a given artifact directory.
+        Predicts figure annotations for a specific page in a document.
 
-        This function retrieves an artifact directory using the provided image artifact address.
-        It reads metadata from a JSONL file in the artifact directory and iterates over each item in the metadata.
-        For each item, it constructs the file path for the page image and checks for the presence of figure image files.
-        If figure image files are found, it reads and converts the page image, then uses the `annotate_figures` method
-        to extract figure annotations from the page image. The extracted annotations are then structured using the
-        `extract_structured_output` method and appended to the annotations list.
+        This function retrieves the artifact directory from the given image artifact address,
+        reads the metadata from the 'metadata.jsonl' file, and iterates through the metadata
+        to find the specified page index. If the page index matches, it reads the page image
+        and associated figure images, and then uses the `annotate_figures` method to extract
+        figure annotations from the page image. The extracted annotations are then structured
+        using the `extract_structured_output` method and returned as a dictionary.
 
         Args:
-            image_artifact_address (str): The address of the image artifact.
+            page_idx (int): The index of the page to annotate.
+            image_artifact_address (str): The address of the image artifact containing the page images.
 
         Returns:
-            list: A list of dictionaries containing page indices and their corresponding figure annotations.
+            dict: A dictionary containing the page index as the key and the extracted figure annotations
+                  as the value.
         """
         artifact_dir = get_wandb_artifact(image_artifact_address, "dataset")
         metadata = read_jsonl_file(os.path.join(artifact_dir, "metadata.jsonl"))
-        annotations = []
+        annotations = {}
         for item in track(metadata, description="Annotating images:"):
-            page_image_file = os.path.join(artifact_dir, f"page{item['page_idx']}.png")
-            figure_image_files = glob(
-                os.path.join(artifact_dir, f"page{item['page_idx']}_fig*.png")
-            )
-            if len(figure_image_files) > 0:
-                page_image = cv2.imread(page_image_file)
-                page_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2RGB)
-                page_image = Image.fromarray(page_image)
-                figure_extracted_annotations = self.annotate_figures(
-                    page_image=page_image
+            if item["page_idx"] == page_idx:
+                page_image_file = os.path.join(
+                    artifact_dir, f"page{item['page_idx']}.png"
                 )
-                annotations.append(
-                    {
-                        "page_idx": item["page_idx"],
-                        "annotations": self.extract_structured_output(
-                            figure_extracted_annotations["annotations"]
-                        ).model_dump(),
-                    }
+                figure_image_files = glob(
+                    os.path.join(artifact_dir, f"page{item['page_idx']}_fig*.png")
                 )
+                if len(figure_image_files) > 0:
+                    page_image = cv2.imread(page_image_file)
+                    page_image = cv2.cvtColor(page_image, cv2.COLOR_BGR2RGB)
+                    page_image = Image.fromarray(page_image)
+                    figure_extracted_annotations = self.annotate_figures(
+                        page_image=page_image
+                    )
+                    figure_extracted_annotations = self.extract_structured_output(
+                        figure_extracted_annotations["annotations"]
+                    ).model_dump()
+                    annotations[item["page_idx"]] = figure_extracted_annotations[
+                        "annotations"
+                    ]
+                break
         return annotations
