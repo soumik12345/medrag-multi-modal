@@ -7,47 +7,69 @@ from medrag_multi_modal.assistant import (
     LLMClient,
     MedQAAssistant,
 )
+from medrag_multi_modal.assistant.llm_client import (
+    GOOGLE_MODELS,
+    MISTRAL_MODELS,
+    OPENAI_MODELS,
+)
 from medrag_multi_modal.retrieval import MedCPTRetriever
 
 # Load environment variables
 load_dotenv()
 
+# Define constants
+ALL_AVAILABLE_MODELS = GOOGLE_MODELS + MISTRAL_MODELS + OPENAI_MODELS
+
 # Sidebar for configuration settings
 st.sidebar.title("Configuration Settings")
 project_name = st.sidebar.text_input(
-    "Project Name",
-    "ml-colabs/medrag-multi-modal"
+    label="Project Name",
+    value="ml-colabs/medrag-multi-modal",
+    placeholder="wandb project name",
+    help="format: wandb_username/wandb_project_name",
 )
 chunk_dataset_name = st.sidebar.text_input(
-    "Text Chunk WandB Dataset Name",
-    "grays-anatomy-chunks:v0"
+    label="Text Chunk WandB Dataset Name",
+    value="grays-anatomy-chunks:v0",
+    placeholder="wandb dataset name",
+    help="format: wandb_dataset_name:version",
 )
 index_artifact_address = st.sidebar.text_input(
-    "WandB Index Artifact Address",
-    "ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
+    label="WandB Index Artifact Address",
+    value="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
+    placeholder="wandb artifact address",
+    help="format: wandb_username/wandb_project_name/wandb_artifact_name:version",
 )
 image_artifact_address = st.sidebar.text_input(
-    "WandB Image Artifact Address",
-    "ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6",
+    label="WandB Image Artifact Address",
+    value="ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6",
+    placeholder="wandb artifact address",
+    help="format: wandb_username/wandb_project_name/wandb_artifact_name:version",
 )
-llm_model_name = st.sidebar.text_input(
-    "LLM Client Model Name",
-    "gemini-1.5-flash"
+llm_client_model_name = st.sidebar.selectbox(
+    label="LLM Client Model Name",
+    options=ALL_AVAILABLE_MODELS,
+    index=ALL_AVAILABLE_MODELS.index("gemini-1.5-flash"),
+    help="select a model from the list",
 )
-figure_extraction_model_name = st.sidebar.text_input(
-    "Figure Extraction Model Name",
-    "pixtral-12b-2409"
+figure_extraction_model_name = st.sidebar.selectbox(
+    label="Figure Extraction Model Name",
+    options=ALL_AVAILABLE_MODELS,
+    index=ALL_AVAILABLE_MODELS.index("pixtral-12b-2409"),
+    help="select a model from the list",
 )
-structured_output_model_name = st.sidebar.text_input(
-    "Structured Output Model Name",
-    "gpt-4o"
+structured_output_model_name = st.sidebar.selectbox(
+    label="Structured Output Model Name",
+    options=ALL_AVAILABLE_MODELS,
+    index=ALL_AVAILABLE_MODELS.index("gpt-4o"),
+    help="select a model from the list",
 )
 
 # Initialize Weave
 weave.init(project_name=project_name)
 
 # Initialize clients and assistants
-llm_client = LLMClient(model_name=llm_model_name)
+llm_client = LLMClient(model_name=llm_client_model_name)
 retriever = MedCPTRetriever.from_wandb_artifact(
     chunk_dataset_name=chunk_dataset_name,
     index_artifact_address=index_artifact_address,
