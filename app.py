@@ -65,6 +65,9 @@ structured_output_model_name = st.sidebar.selectbox(
     help="select a model from the list",
 )
 
+# Streamlit app layout
+st.title("MedQA Assistant App")
+
 # Initialize Weave
 weave.init(project_name=project_name)
 
@@ -83,27 +86,10 @@ medqa_assistant = MedQAAssistant(
     llm_client=llm_client, retriever=retriever, figure_annotator=figure_annotator
 )
 
-# Streamlit app layout
-st.title("MedQA Assistant App")
-
-# Initialize chat history
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-# Display chat messages from history on app rerun
-for message in st.session_state.chat_history:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Chat thread section with user input and response
-if query := st.chat_input("What medical question can I assist you with today?"):
-    # Add user message to chat history
-    st.session_state.chat_history.append({"role": "user", "content": query})
+query = st.chat_input("Enter your question here")
+if query:
     with st.chat_message("user"):
         st.markdown(query)
-
-    # Process query and get response
     response = medqa_assistant.predict(query=query)
-    st.session_state.chat_history.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
