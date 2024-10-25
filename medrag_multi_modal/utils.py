@@ -3,9 +3,8 @@ import io
 
 import jsonlines
 import torch
-from PIL import Image
-
 import wandb
+from PIL import Image
 
 
 def get_wandb_artifact(

@@ -6,9 +6,8 @@ import weave
 if TYPE_CHECKING:
     from byaldi import RAGMultiModalModel
 
-from PIL import Image
-
 import wandb
+from PIL import Image
 
 from ..utils import get_wandb_artifact
 

@@ -1,6 +1,5 @@
 import streamlit as st
 import weave
-from dotenv import load_dotenv
 
 from medrag_multi_modal.assistant import (
     FigureAnnotatorFromPageImage,
