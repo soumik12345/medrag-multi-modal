@@ -11,9 +11,13 @@ The MedQA Assistant App is a Streamlit-based application designed to provide a c
 
 ## Usage
 
+1. Install the package using:
+    ```bash
+    uv pip install .
+    ```
 1. **Launch the App**: Start the application using Streamlit:
     ```bash
-    streamlit run app.py
+    medrag run
     ```
 2. **Configure Settings**: Adjust configuration settings in the sidebar to suit your needs.
 3. **Ask a Question**: Enter your medical question in the chat input field.
