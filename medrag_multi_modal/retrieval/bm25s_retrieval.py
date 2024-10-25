@@ -3,10 +3,9 @@ from glob import glob
 from typing import Optional
 
 import bm25s
+import wandb
 import weave
 from Stemmer import Stemmer
-
-import wandb
 
 LANGUAGE_DICT = {
     "english": "en",

@@ -44,9 +44,13 @@ dependencies = [
     "jsonlines>=4.0.0",
     "opencv-python>=4.10.0.84",
     "openai>=1.52.2",
+    "streamlit>=1.39.0",
 ]
 
 [project.optional-dependencies]
+app = [
+    "streamlit>=1.39.0",
+]
 core = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
@@ -74,10 +78,12 @@ core = [
     "opencv-python>=4.10.0.84",
     "openai>=1.52.2",
 ]
-
-dev = ["pytest>=8.3.3", "isort>=5.13.2", "black>=24.10.0", "ruff>=0.6.9"]
-
-
+dev = [
+    "pytest>=8.3.3",
+    "isort>=5.13.2",
+    "black>=24.10.0",
+    "ruff>=0.6.9",
+]
 docs = [
     "mkdocs>=1.6.1",
     "mkdocstrings>=0.26.1",
@@ -89,6 +95,11 @@ docs = [
     "jupyter>=1.1.1",
 ]
 
+[project.scripts]
+medrag = "medrag_multi_modal.cli:main"
 
 [tool.pytest.ini_options]
 pythonpath = "."
+
+[tool.setuptools]
+py-modules = ["medrag_multi_modal"]

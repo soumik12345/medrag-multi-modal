@@ -5,8 +5,8 @@ from typing import Dict, List, Optional
 
 import jsonlines
 import rich
-
 import wandb
+
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
