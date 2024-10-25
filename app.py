@@ -14,9 +14,6 @@ from medrag_multi_modal.assistant.llm_client import (
 )
 from medrag_multi_modal.retrieval import MedCPTRetriever
 
-# Load environment variables
-load_dotenv()
-
 # Define constants
 ALL_AVAILABLE_MODELS = GOOGLE_MODELS + MISTRAL_MODELS + OPENAI_MODELS
 
