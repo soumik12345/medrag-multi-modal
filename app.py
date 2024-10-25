@@ -50,14 +50,14 @@ llm_client_model_name = st.sidebar.selectbox(
 )
 figure_extraction_model_name = st.sidebar.selectbox(
     label="Figure Extraction Model Name",
-    options=ALL_AVAILABLE_MODELS,
-    index=ALL_AVAILABLE_MODELS.index("pixtral-12b-2409"),
+    options=["pixtral-12b-2409"],
+    index=0,
     help="select a model from the list",
 )
 structured_output_model_name = st.sidebar.selectbox(
     label="Structured Output Model Name",
-    options=ALL_AVAILABLE_MODELS,
-    index=ALL_AVAILABLE_MODELS.index("gpt-4o"),
+    options=OPENAI_MODELS,
+    index=OPENAI_MODELS.index("gpt-4o"),
     help="select a model from the list",
 )
 
