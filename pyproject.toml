@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
-    "datasets>=3.0.1",
+    "datasets>=3.1.0",
     "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",
@@ -54,7 +54,7 @@ app = [
 core = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
-    "datasets>=3.0.1",
+    "datasets>=3.1.0",
     "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",

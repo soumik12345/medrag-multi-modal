@@ -7,6 +7,7 @@ import PyPDF2
 import rich
 import weave
 from firerequests import FireRequests
+from datasets import Dataset
 
 
 class BaseTextLoader(ABC):
@@ -85,7 +86,7 @@ class BaseTextLoader(ABC):
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
-        weave_dataset_name: Optional[str] = None,
+        dataset_repo_id: Optional[str] = None,
         **kwargs,
     ) -> List[Dict[str, str]]:
         """
@@ -102,12 +103,12 @@ class BaseTextLoader(ABC):
         each page, extract the text from the PDF, and convert it to markdown.
         It processes pages concurrently using `asyncio` for efficiency.
 
-        If a weave_dataset_name is provided, the processed pages are published to a Weave dataset.
+        If a `dataset_repo_id` is provided, the processed pages are published to a HuggingFace dataset.
 
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
-            weave_dataset_name (Optional[str]): The name of the Weave dataset to publish the pages to, if provided.
+            dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
@@ -142,6 +143,7 @@ class BaseTextLoader(ABC):
         for task in asyncio.as_completed(tasks):
             await task
 
-        if weave_dataset_name:
-            weave.publish(weave.Dataset(name=weave_dataset_name, rows=pages))
+        if dataset_repo_id:
+            dataset = Dataset.from_list(pages)
+            dataset.push_to_hub(dataset_repo_id)
         return pages
