@@ -1,13 +1,12 @@
 import asyncio
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import PyPDF2
 import rich
-import weave
-from firerequests import FireRequests
 from datasets import Dataset
+from firerequests import FireRequests
 
 
 class BaseTextLoader(ABC):
@@ -145,8 +144,8 @@ class BaseTextLoader(ABC):
             await task
 
         dataset = Dataset.from_list(pages)
-        
+
         if dataset_repo_id:
             dataset.push_to_hub(dataset_repo_id)
-        
+
         return dataset
