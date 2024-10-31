@@ -88,7 +88,7 @@ class BaseTextLoader(ABC):
         end_page: Optional[int] = None,
         dataset_repo_id: Optional[str] = None,
         **kwargs,
-    ) -> List[Dict[str, str]]:
+    ) -> Dataset:
         """
         Asynchronously loads text from a PDF file specified by a URL or local file path.
         The overrided processing abstract method then processes the text into markdown format,
@@ -112,14 +112,15 @@ class BaseTextLoader(ABC):
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries, each containing the text and metadata for a processed page.
-            Each dictionary will have the following keys and values:
+            Dataset: A HuggingFace Dataset object containing the text and metadata for processed pages.
+            Each entry in the dataset will have the following keys and values:
 
             - "text": (str) the processed page data in markdown format.
             - "page_idx": (int) the index of the page.
             - "document_name": (str) the name of the document.
             - "file_path": (str) the local file path where the PDF is stored.
             - "file_url": (str) the URL of the PDF file.
+            - "loader_name": (str) the name of the loader class used to process the page.
 
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
@@ -143,7 +144,9 @@ class BaseTextLoader(ABC):
         for task in asyncio.as_completed(tasks):
             await task
 
+        dataset = Dataset.from_list(pages)
+        
         if dataset_repo_id:
-            dataset = Dataset.from_list(pages)
             dataset.push_to_hub(dataset_repo_id)
-        return pages
+        
+        return dataset
