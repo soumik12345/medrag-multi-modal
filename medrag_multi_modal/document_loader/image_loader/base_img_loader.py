@@ -44,8 +44,7 @@ class BaseImageLoader(BaseTextLoader):
         start_page: int,
         end_page: int,
         image_save_dir: str,
-        dataset_repo_id: str,
-        push_to_hub: bool = False,
+        dataset_repo_id: Optional[str] = None,
     ):
         features = Features(
             {
@@ -74,7 +73,7 @@ class BaseImageLoader(BaseTextLoader):
                     "page_idx": page_idx,
                 }
             )
-        if push_to_hub:
+        if dataset_repo_id:
             dataset.push_to_hub(dataset_repo_id)
         return dataset
 
@@ -89,7 +88,6 @@ class BaseImageLoader(BaseTextLoader):
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
         dataset_repo_id: Optional[str] = None,
-        push_to_hub: bool = False,
         image_save_dir: str = "./images",
         exclude_file_extensions: list[str] = [],
         cleanup: bool = False,
@@ -115,7 +113,6 @@ class BaseImageLoader(BaseTextLoader):
             start_page (Optional[int]): The starting page index (0-based) to process.
             end_page (Optional[int]): The ending page index (0-based) to process.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
-            push_to_hub (bool): Whether to push the dataset to the HuggingFace Hub, if provided.
             image_save_dir (str): The directory to save the extracted images.
             exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
             cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
@@ -156,7 +153,7 @@ class BaseImageLoader(BaseTextLoader):
                 os.remove(os.path.join(image_save_dir, file))
 
         dataset = self.save_as_dataset(
-            start_page, end_page, image_save_dir, dataset_repo_id, push_to_hub
+            start_page, end_page, image_save_dir, dataset_repo_id
         )
 
         if cleanup:
