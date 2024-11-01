@@ -84,7 +84,7 @@ class MarkerImageLoader(BaseImageLoader):
             - "file_url": (str) the URL of the PDF file.
             - "image_file_path": (str) the local file path where the image is stored.
         """
-        _, images, out_meta = convert_single_pdf(
+        _, images, _ = convert_single_pdf(
             self.document_file_path,
             self.model_lst,
             max_pages=1,
@@ -116,7 +116,6 @@ class MarkerImageLoader(BaseImageLoader):
             "file_path": self.document_file_path,
             "file_url": self.url,
             "image_file_paths": os.path.join(image_save_dir, "*.png"),
-            "meta": out_meta,
         }
 
     def load_data(

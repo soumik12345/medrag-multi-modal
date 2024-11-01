@@ -76,7 +76,7 @@ class MarkerTextLoader(BaseTextLoader):
         """
         model_lst = load_all_models()
 
-        text, _, out_meta = convert_single_pdf(
+        text, _, _ = convert_single_pdf(
             self.document_file_path,
             model_lst,
             max_pages=1,
@@ -92,5 +92,4 @@ class MarkerTextLoader(BaseTextLoader):
             "document_name": self.document_name,
             "file_path": self.document_file_path,
             "file_url": self.url,
-            "meta": out_meta,
         }
