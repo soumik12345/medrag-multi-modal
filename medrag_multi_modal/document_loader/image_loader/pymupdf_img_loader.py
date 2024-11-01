@@ -3,8 +3,9 @@ import os
 from typing import Any, Dict
 
 import fitz
-from PIL import Image
 from pdf2image.pdf2image import convert_from_path
+from PIL import Image
+
 from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
     BaseImageLoader,
 )
@@ -116,7 +117,7 @@ class PyMuPDFImageLoader(BaseImageLoader):
             image_file_paths.append(image_file_path)
 
         pdf_document.close()
-        
+
         page_image = convert_from_path(
             self.document_file_path,
             first_page=page_idx + 1,

@@ -58,3 +58,55 @@ jobs:
           pip install -e ".[core, dev]"
           pytest -s tests/document_loader/text_loader.py::test_pypdf2_text_loader
           deactivate
+  test-image-loader-fitzpil:
+    name: test image loader (fitzpil)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/image_loader.py::test_fitzpil_img_loader
+          deactivate
+  test-image-loader-pdf2image:
+    name: test image loader (pdf2image)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/image_loader.py::test_pdf2image_img_loader
+          deactivate
+  test-image-loader-pdfplumber:
+    name: test image loader (pdfplumber)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/image_loader.py::test_pdfplumber_img_loader
+          deactivate
+  test-image-loader-pymupdf:
+    name: test image loader (pymupdf)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/image_loader.py::test_pymupdf_img_loader
+          deactivate
