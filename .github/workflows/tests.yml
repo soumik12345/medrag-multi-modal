@@ -27,7 +27,7 @@ jobs:
       - run: |
           pip install -U uv pip
           uv venv
-          source venv/bin/activate
+          source .venv/bin/activate
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
           pytest -s tests/document_loader/text_loader.py
