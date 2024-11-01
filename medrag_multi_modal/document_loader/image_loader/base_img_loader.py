@@ -123,7 +123,7 @@ class BaseImageLoader(BaseTextLoader):
 
         Returns:
             Dataset: A HuggingFace dataset containing the processed pages.
-        
+
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
         """
@@ -158,8 +158,8 @@ class BaseImageLoader(BaseTextLoader):
         dataset = self.save_as_dataset(
             start_page, end_page, image_save_dir, dataset_repo_id, push_to_hub
         )
-        
+
         if cleanup:
             self.cleanup_image_dir(image_save_dir)
-        
+
         return dataset
