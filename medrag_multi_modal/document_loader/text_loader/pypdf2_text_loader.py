@@ -2,7 +2,9 @@ from typing import Dict
 
 import PyPDF2
 
-from .base_text_loader import BaseTextLoader
+from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
+    BaseTextLoader,
+)
 
 
 class PyPDF2TextLoader(BaseTextLoader):

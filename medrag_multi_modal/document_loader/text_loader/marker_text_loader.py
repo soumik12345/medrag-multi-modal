@@ -4,7 +4,9 @@ from typing import Dict
 from marker.convert import convert_single_pdf
 from marker.models import load_all_models
 
-from .base_text_loader import BaseTextLoader
+from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
+    BaseTextLoader,
+)
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
