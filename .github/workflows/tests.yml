@@ -19,8 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
-  test-text-loader:
-    name: test text loader
+  test-text-loader-pdfplumber:
+    name: test text loader (pdfplumber)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,5 +30,31 @@ jobs:
           source .venv/bin/activate
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
-          pytest -s tests/document_loader/text_loader.py
+          pytest -s tests/document_loader/text_loader.py::test_pdfplumber_text_loader
+          deactivate
+  test-text-loader-pymupdf4llm:
+    name: test text loader (pymupdf4llm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/text_loader.py::test_pymupdf_text_loader
+          deactivate
+  test-text-loader-pypdf2:
+    name: test text loader (pypdf2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/text_loader.py::test_pypdf2_text_loader
           deactivate
