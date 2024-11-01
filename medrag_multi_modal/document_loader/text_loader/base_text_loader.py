@@ -88,6 +88,7 @@ class BaseTextLoader(ABC):
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
         dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
         **kwargs,
     ) -> Dataset:
         """
@@ -110,6 +111,7 @@ class BaseTextLoader(ABC):
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
@@ -146,11 +148,11 @@ class BaseTextLoader(ABC):
             await task
 
         dataset = Dataset.from_list(pages)
-        dataset = (
-            concatenate_datasets([dataset, load_dataset(dataset_repo_id)["corpus"]])
-            if is_existing_dataset_repo(dataset_repo_id)
-            else dataset
-        )
+        if is_existing_dataset_repo(dataset_repo_id):
+            if not overwrite_dataset:
+                dataset = concatenate_datasets(
+                    [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                )
 
         if dataset_repo_id:
             dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
