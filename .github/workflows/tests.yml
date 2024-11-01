@@ -26,6 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-        pip install -U pip
-        pip install -e ".[core, dev]"
-        pytest -s tests/document_loader/text_loader.py
+          pip install -U pip
+          pip install -e ".[core, dev]"
+          pytest -s tests/document_loader/text_loader.py
