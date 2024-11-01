@@ -19,3 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
+  test-text-loader:
+    name: Test text loader
+    runs-on: ubuntu-latest
+    container: pytorch/pytorch
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+        pip install -U pip
+        pip install -e ".[core, dev]"
+        pytest -s tests/document_loader/text_loader.py
