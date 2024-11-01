@@ -161,6 +161,11 @@ class BaseImageLoader(BaseTextLoader):
             if file.endswith(tuple(exclude_file_extensions)):
                 os.remove(os.path.join(image_save_dir, file))
 
-        return self.save_as_dataset(
+        dataset = self.save_as_dataset(
             start_page, end_page, image_save_dir, dataset_repo_id, push_to_hub
         )
+        
+        if cleanup:
+            self.cleanup_image_dir(image_save_dir)
+        
+        return dataset
