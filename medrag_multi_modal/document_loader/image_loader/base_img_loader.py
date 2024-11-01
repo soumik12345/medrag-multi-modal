@@ -8,11 +8,20 @@ import jsonlines
 import PIL
 import PIL.Image
 import rich
-from datasets import Dataset, Features, Image, Sequence, Value
+from datasets import (
+    Dataset,
+    Features,
+    Image,
+    Sequence,
+    Value,
+    concatenate_datasets,
+    load_dataset,
+)
 
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
+from medrag_multi_modal.utils import is_existing_dataset_repo
 
 
 class BaseImageLoader(BaseTextLoader):
@@ -45,6 +54,7 @@ class BaseImageLoader(BaseTextLoader):
         end_page: int,
         image_save_dir: str,
         dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
     ):
         features = Features(
             {
@@ -73,8 +83,16 @@ class BaseImageLoader(BaseTextLoader):
                     "page_idx": page_idx,
                 }
             )
+
+        if is_existing_dataset_repo(dataset_repo_id):
+            if not overwrite_dataset:
+                dataset = concatenate_datasets(
+                    [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                )
+
         if dataset_repo_id:
-            dataset.push_to_hub(dataset_repo_id)
+            dataset.push_to_hub(dataset_repo_id, split="corpus")
+
         return dataset
 
     def cleanup_image_dir(self, image_save_dir: str):
@@ -88,6 +106,7 @@ class BaseImageLoader(BaseTextLoader):
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
         dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
         image_save_dir: str = "./images",
         exclude_file_extensions: list[str] = [],
         cleanup: bool = False,
@@ -113,6 +132,7 @@ class BaseImageLoader(BaseTextLoader):
             start_page (Optional[int]): The starting page index (0-based) to process.
             end_page (Optional[int]): The ending page index (0-based) to process.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             image_save_dir (str): The directory to save the extracted images.
             exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
             cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
@@ -153,7 +173,7 @@ class BaseImageLoader(BaseTextLoader):
                 os.remove(os.path.join(image_save_dir, file))
 
         dataset = self.save_as_dataset(
-            start_page, end_page, image_save_dir, dataset_repo_id
+            start_page, end_page, image_save_dir, dataset_repo_id, overwrite_dataset
         )
 
         if cleanup:
