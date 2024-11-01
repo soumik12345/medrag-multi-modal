@@ -122,14 +122,8 @@ class BaseImageLoader(BaseTextLoader):
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries, each containing the image and metadata for a processed page.
-            Each dictionary will have the following keys and values:
-
-            - "page_idx": (int) the index of the page.
-            - "document_name": (str) the name of the document.
-            - "file_path": (str) the local file path where the PDF is stored.
-            - "file_url": (str) the URL of the PDF file.
-            - "image_file_path" or "image_file_paths": (str) the local file path where the image/images are stored.
+            Dataset: A HuggingFace dataset containing the processed pages.
+        
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
         """
