@@ -5,7 +5,9 @@ from marker.convert import convert_single_pdf
 from marker.models import load_all_models
 from pdf2image.pdf2image import convert_from_path
 
-from .base_img_loader import BaseImageLoader
+from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
+    BaseImageLoader,
+)
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 

@@ -5,7 +5,9 @@ from typing import Any, Dict
 import fitz
 from PIL import Image
 
-from .base_img_loader import BaseImageLoader
+from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
+    BaseImageLoader,
+)
 
 
 class PyMuPDFImageLoader(BaseImageLoader):
