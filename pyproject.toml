@@ -103,3 +103,9 @@ filterwarnings = "ignore::DeprecationWarning"
 
 [tool.setuptools]
 py-modules = ["medrag_multi_modal"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["F", "I"]

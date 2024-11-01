@@ -7,12 +7,6 @@ on:
       - pyproject.toml
 
 jobs:
-  code-format:
-    name: check code format using black
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: psf/black@stable
   lint:
     name: check linting using ruff
     runs-on: ubuntu-latest
