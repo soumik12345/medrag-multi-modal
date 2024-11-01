@@ -3,9 +3,11 @@ from typing import Callable, Optional, Union
 import semchunk
 import tiktoken
 import tokenizers
-import weave
+from datasets import Dataset, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
+
+from medrag_multi_modal.utils import is_existing_dataset_repo
 
 TOKENIZER_OR_TOKEN_COUNTER = Union[
     str,
@@ -28,17 +30,13 @@ class SemanticChunker:
 
     !!! example "Example Usage"
         ```python
-        import weave
-        from dotenv import load_dotenv
-
         from medrag_multi_modal.semantic_chunking import SemanticChunker
 
-        load_dotenv()
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
+
         chunker = SemanticChunker(chunk_size=256)
-        chunker.chunk_and_publish(
-            document_dataset_name="grays-anatomy-text:v13",
-            chunk_dataset_name="grays-anatomy-chunks",
+        chunker.chunk(
+            document_dataset="geekyrakshit/grays-anatomy-test",
+            chunk_dataset_repo_id="geekyrakshit/grays-anatomy-chunks-test",
         )
         ```
 
@@ -67,14 +65,40 @@ class SemanticChunker:
             memoize=memoize,
         )
 
-    def chunk_and_publish(
-        self, document_dataset_name: str, chunk_dataset_name: Optional[str] = None
-    ) -> None:
-        document_dataset = weave.ref(document_dataset_name).get().rows
+    def chunk(
+        self,
+        document_dataset: Union[Dataset, str],
+        chunk_dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
+    ) -> Dataset:
+        """
+        Chunks a document dataset into smaller segments and publishes them as a new dataset.
+
+        This function takes a document dataset, either as a HuggingFace Dataset object or a string
+        representing the dataset repository ID, and chunks the documents into smaller segments using
+        the specified chunker. The resulting chunks are then optionally published to a HuggingFace
+        dataset repository.
+
+        Args:
+            document_dataset (Union[Dataset, str]): The document dataset to be chunked. It can be either
+                a HuggingFace Dataset object or a string representing the dataset repository ID.
+            chunk_dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish
+                the chunks to, if provided. Defaults to None.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
+
+        Returns:
+            Dataset: A HuggingFace Dataset object containing the chunks.
+        """
+        document_dataset = (
+            load_dataset(document_dataset, split="corpus")
+            if isinstance(document_dataset, str)
+            else document_dataset
+        )
         chunks = []
-        for idx, document in track(
-            enumerate(document_dataset), description="Chunking documents"
+        for idx in track(
+            range(document_dataset.num_rows), description="Chunking documents"
         ):
+            document = next(iter(document_dataset))
             document_chunks = self.chunker.chunk(str(document["text"]))
             for chunk in document_chunks:
                 chunks.append(
@@ -83,6 +107,19 @@ class SemanticChunker:
                         "document_name": document["document_name"],
                         "page_idx": document["page_idx"],
                         "text": chunk,
+                        "file_path": document["file_path"],
+                        "file_url": document["file_url"],
+                        "loader_name": document["loader_name"],
                     }
                 )
-        weave.publish(weave.Dataset(name=chunk_dataset_name, rows=chunks))
+
+        dataset = Dataset.from_list(chunks)
+        if chunk_dataset_repo_id:
+            if is_existing_dataset_repo(chunk_dataset_repo_id):
+                if not overwrite_dataset:
+                    dataset = concatenate_datasets(
+                        [dataset, load_dataset(chunk_dataset_repo_id)["chunks"]]
+                    )
+            dataset.push_to_hub(repo_id=chunk_dataset_repo_id, split="chunks")
+
+        return dataset
