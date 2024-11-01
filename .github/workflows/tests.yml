@@ -64,6 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          apt-get install -y poppler-utils
           pip install -U uv pip
           uv venv
           source .venv/bin/activate
@@ -77,6 +78,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          apt-get install -y poppler-utils
           pip install -U uv pip
           uv venv
           source .venv/bin/activate
@@ -90,6 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          apt-get install -y poppler-utils
           pip install -U uv pip
           uv venv
           source .venv/bin/activate
@@ -103,6 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          apt-get install -y poppler-utils
           pip install -U uv pip
           uv venv
           source .venv/bin/activate
