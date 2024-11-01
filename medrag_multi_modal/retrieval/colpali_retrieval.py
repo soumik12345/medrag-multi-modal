@@ -9,8 +9,7 @@ if TYPE_CHECKING:
 from PIL import Image
 
 import wandb
-
-from ..utils import get_wandb_artifact
+from medrag_multi_modal.utils import get_wandb_artifact
 
 
 class CalPaliRetriever(weave.Model):

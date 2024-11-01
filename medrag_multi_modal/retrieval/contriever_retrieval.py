@@ -13,8 +13,13 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 
-from ..utils import get_torch_backend, get_wandb_artifact
-from .common import SimilarityMetric, argsort_scores, mean_pooling, save_vector_index
+from medrag_multi_modal.retrieval.common import (
+    SimilarityMetric,
+    argsort_scores,
+    mean_pooling,
+    save_vector_index,
+)
+from medrag_multi_modal.utils import get_torch_backend, get_wandb_artifact
 
 
 class ContrieverRetriever(weave.Model):
