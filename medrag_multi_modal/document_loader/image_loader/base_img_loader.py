@@ -5,8 +5,6 @@ from glob import glob
 from typing import Dict, List, Optional
 
 import jsonlines
-import PIL
-import PIL.Image
 import rich
 from datasets import (
     Dataset,
@@ -58,31 +56,36 @@ class BaseImageLoader(BaseTextLoader):
     ):
         features = Features(
             {
-                "page_image": Image(mode="RGB"),
-                "page_figure_images": Sequence(Image(mode="RGB")),
+                "page_image": Image(decode=True),
+                "page_figure_images": Sequence(Image(decode=True)),
                 "document_name": Value(dtype="string"),
                 "page_idx": Value(dtype="int32"),
             }
         )
-        dataset = Dataset.from_dict({}, features=features)
+
+        all_examples = []
         for page_idx in range(start_page, end_page):
-            page_image = PIL.Image.open(
-                glob(os.path.join(image_save_dir, f"{page_idx}*.png"))[0]
+            page_image_file_paths = glob(
+                os.path.join(image_save_dir, f"page{page_idx}*.png")
             )
-            page_figure_images = [
-                PIL.Image.open(image_file_path)
-                for image_file_path in glob(
-                    os.path.join(image_save_dir, f"{page_idx}*_fig*.png")
-                )
-            ]
-            dataset.add_item(
-                {
-                    "page_image": page_image,
-                    "page_figure_images": page_figure_images,
+            if len(page_image_file_paths) > 0:
+                page_image_path = page_image_file_paths[0]
+                figure_image_paths = [
+                    image_file_path
+                    for image_file_path in glob(
+                        os.path.join(image_save_dir, f"page{page_idx}*_fig*.png")
+                    )
+                ]
+
+                example = {
+                    "page_image": page_image_path,
+                    "page_figure_images": figure_image_paths,
                     "document_name": self.document_name,
                     "page_idx": page_idx,
                 }
-            )
+                all_examples.append(example)
+
+        dataset = Dataset.from_list(all_examples, features=features)
 
         if is_existing_dataset_repo(dataset_repo_id):
             if not overwrite_dataset:
@@ -95,7 +98,7 @@ class BaseImageLoader(BaseTextLoader):
 
         return dataset
 
-    def cleanup_image_dir(self, image_save_dir: str):
+    def cleanup_image_dir(self, image_save_dir: str = "./images"):
         for file in os.listdir(image_save_dir):
             file_path = os.path.join(image_save_dir, file)
             if os.path.isfile(file_path):
@@ -109,7 +112,6 @@ class BaseImageLoader(BaseTextLoader):
         overwrite_dataset: bool = False,
         image_save_dir: str = "./images",
         exclude_file_extensions: list[str] = [],
-        cleanup: bool = False,
         **kwargs,
     ) -> List[Dict[str, str]]:
         """
@@ -135,7 +137,6 @@ class BaseImageLoader(BaseTextLoader):
             overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             image_save_dir (str): The directory to save the extracted images.
             exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
-            cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
@@ -175,8 +176,5 @@ class BaseImageLoader(BaseTextLoader):
         dataset = self.save_as_dataset(
             start_page, end_page, image_save_dir, dataset_repo_id, overwrite_dataset
         )
-
-        if cleanup:
-            self.cleanup_image_dir(image_save_dir)
 
         return dataset

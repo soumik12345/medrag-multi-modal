@@ -103,14 +103,13 @@ class MarkerImageLoader(BaseImageLoader):
             image.save(image_file_path, "png")
             image_file_paths.append(image_file_path)
 
-        if self.save_page_image:
-            page_image = convert_from_path(
-                self.document_file_path,
-                first_page=page_idx + 1,
-                last_page=page_idx + 1,
-                **kwargs,
-            )[0]
-            page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
+        page_image = convert_from_path(
+            self.document_file_path,
+            first_page=page_idx + 1,
+            last_page=page_idx + 1,
+            **kwargs,
+        )[0]
+        page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
 
         return {
             "page_idx": page_idx,
