@@ -29,7 +29,7 @@ class BaseTextLoader(ABC):
         self.document_name = document_name
         self.document_file_path = document_file_path
         if not os.path.exists(self.document_file_path):
-            FireRequests().download(url, filename=self.document_file_path)
+            FireRequests().download(url, filenames=self.document_file_path)
         with open(self.document_file_path, "rb") as file:
             pdf_reader = PyPDF2.PdfReader(file)
             self.page_count = len(pdf_reader.pages)
