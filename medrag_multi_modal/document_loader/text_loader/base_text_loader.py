@@ -5,8 +5,10 @@ from typing import Dict, Optional
 
 import PyPDF2
 import rich
-from datasets import Dataset
+from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
+
+from medrag_multi_modal.utils import is_existing_dataset_repo
 
 
 class BaseTextLoader(ABC):
@@ -144,8 +146,13 @@ class BaseTextLoader(ABC):
             await task
 
         dataset = Dataset.from_list(pages)
+        dataset = (
+            concatenate_datasets([dataset, load_dataset(dataset_repo_id)["corpus"]])
+            if is_existing_dataset_repo(dataset_repo_id)
+            else dataset
+        )
 
         if dataset_repo_id:
-            dataset.push_to_hub(dataset_repo_id)
+            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
 
         return dataset

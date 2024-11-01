@@ -3,6 +3,7 @@ import io
 
 import jsonlines
 import torch
+from huggingface_hub import HfApi
 from PIL import Image
 
 import wandb
@@ -51,3 +52,12 @@ def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
     with jsonlines.open(file_path) as reader:
         for obj in reader:
             return obj
+
+
+def is_existing_dataset_repo(repo_id: str) -> bool:
+    api = HfApi()
+    try:
+        api.dataset_info(repo_id)
+        return True
+    except Exception:
+        return False
