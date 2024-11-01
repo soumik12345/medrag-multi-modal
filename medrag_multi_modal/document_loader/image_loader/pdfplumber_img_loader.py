@@ -2,6 +2,7 @@ import os
 from typing import Any, Dict
 
 import pdfplumber
+from pdf2image.pdf2image import convert_from_path
 
 from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
     BaseImageLoader,
@@ -93,6 +94,14 @@ class PDFPlumberImageLoader(BaseImageLoader):
 
                 extracted_image.save(image_file_path, "png")
                 image_file_paths.append(image_file_path)
+
+        page_image = convert_from_path(
+            self.document_file_path,
+            first_page=page_idx + 1,
+            last_page=page_idx + 1,
+            **kwargs,
+        )[0]
+        page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
 
         return {
             "page_idx": page_idx,
