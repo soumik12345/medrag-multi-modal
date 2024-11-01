@@ -1,12 +1,15 @@
 import asyncio
 import os
 from abc import abstractmethod
+from glob import glob
 from typing import Dict, List, Optional
 
 import jsonlines
+import PIL
+import PIL.Image
 import rich
+from datasets import Dataset, Features, Image, Sequence, Value
 
-import wandb
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
@@ -36,11 +39,57 @@ class BaseImageLoader(BaseTextLoader):
         """
         pass
 
+    def save_as_dataset(
+        self,
+        start_page: int,
+        end_page: int,
+        image_save_dir: str,
+        dataset_repo_id: str,
+        push_to_hub: bool = False,
+    ):
+        features = Features(
+            {
+                "page_image": Image(mode="RGB"),
+                "page_figure_images": Sequence(Image(mode="RGB")),
+                "document_name": Value(dtype="string"),
+                "page_idx": Value(dtype="int32"),
+            }
+        )
+        dataset = Dataset.from_dict({}, features=features)
+        for page_idx in range(start_page, end_page):
+            page_image = PIL.Image.open(
+                glob(os.path.join(image_save_dir, f"{page_idx}*.png"))[0]
+            )
+            page_figure_images = [
+                PIL.Image.open(image_file_path)
+                for image_file_path in glob(
+                    os.path.join(image_save_dir, f"{page_idx}*_fig*.png")
+                )
+            ]
+            dataset.add_item(
+                {
+                    "page_image": page_image,
+                    "page_figure_images": page_figure_images,
+                    "document_name": self.document_name,
+                    "page_idx": page_idx,
+                }
+            )
+        if push_to_hub:
+            dataset.push_to_hub(dataset_repo_id)
+        return dataset
+
+    def cleanup_image_dir(self, image_save_dir: str):
+        for file in os.listdir(image_save_dir):
+            file_path = os.path.join(image_save_dir, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
     async def load_data(
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
-        wandb_artifact_name: Optional[str] = None,
+        dataset_repo_id: Optional[str] = None,
+        push_to_hub: bool = False,
         image_save_dir: str = "./images",
         exclude_file_extensions: list[str] = [],
         cleanup: bool = False,
@@ -65,7 +114,8 @@ class BaseImageLoader(BaseTextLoader):
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process.
             end_page (Optional[int]): The ending page index (0-based) to process.
-            wandb_artifact_name (Optional[str]): The name of the WandB artifact to publish the pages to, if provided.
+            dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
+            push_to_hub (bool): Whether to push the dataset to the HuggingFace Hub, if provided.
             image_save_dir (str): The directory to save the extracted images.
             exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
             cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
@@ -111,19 +161,6 @@ class BaseImageLoader(BaseTextLoader):
             if file.endswith(tuple(exclude_file_extensions)):
                 os.remove(os.path.join(image_save_dir, file))
 
-        if wandb_artifact_name:
-            artifact = wandb.Artifact(
-                name=wandb_artifact_name,
-                type="dataset",
-                metadata={"loader_name": self.__class__.__name__},
-            )
-            artifact.add_dir(local_path=image_save_dir)
-            artifact.save()
-            rich.print("Artifact saved and uploaded to wandb!")
-
-        if cleanup:
-            for file in os.listdir(image_save_dir):
-                file_path = os.path.join(image_save_dir, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-        return pages
+        return self.save_as_dataset(
+            start_page, end_page, image_save_dir, dataset_repo_id, push_to_hub
+        )
