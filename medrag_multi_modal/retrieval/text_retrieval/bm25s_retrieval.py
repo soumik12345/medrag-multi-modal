@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 import bm25s
 import weave
+from bm25s import BM25
 from datasets import Dataset, load_dataset
 from Stemmer import Stemmer
 
@@ -35,16 +36,16 @@ class BM25sRetriever(weave.Model):
 
     language: Optional[str]
     use_stemmer: bool = True
-    _retriever: Optional[bm25s.BM25]
+    _retriever: Optional[BM25]
 
     def __init__(
         self,
         language: str = "english",
         use_stemmer: bool = True,
-        retriever: Optional[bm25s.BM25] = None,
+        retriever: Optional[BM25] = None,
     ):
         super().__init__(language=language, use_stemmer=use_stemmer)
-        self._retriever = retriever or bm25s.BM25()
+        self._retriever = retriever or BM25()
 
     def index(
         self,
@@ -99,7 +100,9 @@ class BM25sRetriever(weave.Model):
             self._retriever.save(
                 index_save_dir, corpus=[dict(row) for row in chunk_dataset]
             )
-            commit_type = "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+            commit_type = (
+                "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+            )
             with open(os.path.join(index_save_dir, "config.json"), "w") as config_file:
                 json.dump(
                     {
