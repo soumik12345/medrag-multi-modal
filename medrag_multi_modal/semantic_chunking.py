@@ -7,7 +7,7 @@ from datasets import Dataset, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
 
-from medrag_multi_modal.utils import is_existing_dataset_repo
+from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 TOKENIZER_OR_TOKEN_COUNTER = Union[
     str,
@@ -115,7 +115,7 @@ class SemanticChunker:
 
         dataset = Dataset.from_list(chunks)
         if chunk_dataset_repo_id:
-            if is_existing_dataset_repo(chunk_dataset_repo_id):
+            if is_existing_huggingface_repo(chunk_dataset_repo_id):
                 if not overwrite_dataset:
                     dataset = concatenate_datasets(
                         [dataset, load_dataset(chunk_dataset_repo_id)["chunks"]]
