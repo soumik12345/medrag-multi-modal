@@ -219,6 +219,7 @@ class ContrieverRetriever(weave.Model):
             from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
             load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
             retriever = ContrieverRetriever().from_index(
                 index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
                 chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
@@ -277,6 +278,7 @@ class ContrieverRetriever(weave.Model):
             from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
             load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
             retriever = ContrieverRetriever().from_index(
                 index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
                 chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
