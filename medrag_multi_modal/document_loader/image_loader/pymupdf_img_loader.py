@@ -23,27 +23,16 @@ class PyMuPDFImageLoader(BaseImageLoader):
         ```python
         import asyncio
 
-        import weave
-
-        import wandb
         from medrag_multi_modal.document_loader.image_loader import PyMuPDFImageLoader
 
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
-        wandb.init(project="medrag-multi-modal", entity="ml-colabs")
-        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+        URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+
         loader = PyMuPDFImageLoader(
-            url=url,
+            url=URL,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
         )
-        asyncio.run(
-            loader.load_data(
-                start_page=32,
-                end_page=37,
-                wandb_artifact_name="grays-anatomy-images-pymupdf",
-                cleanup=False,
-            )
-        )
+        dataset = asyncio.run(loader.load_data(start_page=32, end_page=37))
         ```
 
     Args:
