@@ -150,3 +150,17 @@ jobs:
           pip install -e ".[core, dev]"
           pytest -s tests/retrieval/contriever.py
           deactivate
+  test-medcpt-retrieval:
+    name: test retrieval (medcpt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get install -y poppler-utils
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/retrieval/test_medcpt.py
+          deactivate
