@@ -134,7 +134,7 @@ jobs:
           source .venv/bin/activate
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
-          pytest -s tests/retrieval/bm25s.py
+          pytest -s tests/retrieval/test_bm25s.py
           deactivate
   test-contriever-retrieval:
     name: test retrieval (contriever)
@@ -148,7 +148,7 @@ jobs:
           source .venv/bin/activate
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
-          pytest -s tests/retrieval/contriever.py
+          pytest -s tests/retrieval/test_contriever.py
           deactivate
   test-medcpt-retrieval:
     name: test retrieval (medcpt)
