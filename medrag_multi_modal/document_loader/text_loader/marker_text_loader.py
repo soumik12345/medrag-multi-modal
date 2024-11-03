@@ -27,25 +27,17 @@ class MarkerTextLoader(BaseTextLoader):
     !!! example "Example Usage"
         ```python
         import asyncio
+        
+        from medrag_multi_modal.document_loader import MarkerTextLoader
 
-        import weave
+        URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
 
-        from medrag_multi_modal.document_loader.text_loader import MarkerTextLoader
-
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
-        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
         loader = MarkerTextLoader(
-            url=url,
+            url=URL,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
         )
-        asyncio.run(
-            loader.load_data(
-                start_page=31,
-                end_page=36,
-                weave_dataset_name="grays-anatomy-text",
-            )
-        )
+        dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
         ```
 
     Args:
