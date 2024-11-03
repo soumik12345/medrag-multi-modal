@@ -99,10 +99,10 @@ class ContrieverRetriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks
-                to be indexed.
-            index_name (Optional[str]): The name of the index artifact to be saved. If provided,
-                the vector index is saved to a file and logged as an artifact to Weave.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -168,9 +168,9 @@ class ContrieverRetriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks.
-            index_artifact_address (str): The address of the Weave artifact containing the
-                vector index.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index,

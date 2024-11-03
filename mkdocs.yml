@@ -80,11 +80,12 @@ nav:
       - FitzPIL: 'document_loader/image_loader/fitzpil_img_loader.md'
   - Chunking: 'chunking.md'
   - Retrieval:
-    - BM25-Sparse: 'retreival/bm25s.md'
-    - ColPali: 'retreival/colpali.md'
-    - Contriever: 'retreival/contriever.md'
-    - MedCPT: 'retreival/medcpt.md'
-    - NV-Embed-v2: 'retreival/nv_embed_2.md'
+    - Text-only Retrieval:
+      - BM25-Sparse: 'retrieval/text_retrieval/bm25s.md'
+      - Contriever: 'retrieval/text_retrieval/contriever.md'
+      - MedCPT: 'retrieval/text_retrieval/medcpt.md'
+      - NV-Embed-v2: 'retrieval/text_retrieval/nv_embed_2.md'
+    - ColPali: 'retrieval/colpali.md'
   - Assistant:
     - MedQA Assistant: 'assistant/medqa_assistant.md'
     - Figure Annotation: 'assistant/figure_annotation.md'

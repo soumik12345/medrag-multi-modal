@@ -71,13 +71,12 @@ class NVEmbed2Retriever(weave.Model):
         cleanup: bool = True,
     ):
         """
-        Indexes a dataset of text chunks and optionally saves the vector index to a file.
+        Indexes a dataset of text chunks and optionally saves the vector index to a Huggingface repository.
 
-        This method retrieves a dataset of text chunks from a Weave reference, encodes the
+        This method retrieves a dataset of text chunks from a specified source, encodes the
         text chunks into vector representations using the NV-Embed-v2 model, and stores the
-        resulting vector index. If an index name is provided, the vector index is saved to
-        a file in the safetensors format. Additionally, if a Weave run is active, the vector
-        index file is logged as an artifact to Weave.
+        resulting vector index. If an index repository ID is provided, the vector index is saved to
+        a file in the safetensors format within the specified Huggingface repository.
 
         !!! example "Example Usage"
             ```python
@@ -104,10 +103,10 @@ class NVEmbed2Retriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks
-                to be indexed.
-            index_name (Optional[str]): The name of the index artifact to be saved. If provided,
-                the vector index is saved to a file and logged as an artifact to Weave.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -150,9 +149,9 @@ class NVEmbed2Retriever(weave.Model):
     @classmethod
     def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
         """
-        Creates an instance of the class from a Weave artifact.
+        Creates an instance of the class from a Huggingface repository.
 
-        This method retrieves a vector index and metadata from a Weave artifact stored in
+        This method retrieves a vector index and metadata from a Huggingface repository. It also retrieves a dataset of text chunks from a Huggingface dataset repository. The vector index is loaded from a safetensors file and moved to the appropriate device (CPU or GPU). The text chunks are converted into a list of dictionaries. The method then returns an instance of the class initialized with the retrieved model name, vector index, and chunk dataset.
         Weights & Biases (wandb). It also retrieves a dataset of text chunks from a Weave
         reference. The vector index is loaded from a safetensors file and moved to the
         appropriate device (CPU or GPU). The text chunks are converted into a list of
@@ -183,9 +182,9 @@ class NVEmbed2Retriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks.
-            index_artifact_address (str): The address of the Weave artifact containing the
-                vector index.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index,

@@ -86,12 +86,12 @@ class MedCPTRetriever(weave.Model):
         cleanup: bool = True,
     ):
         """
-        Indexes a dataset of text chunks and optionally saves the vector index.
+        Indexes a dataset of text chunks using the MedCPT model and optionally saves the vector index.
 
-        This method retrieves a dataset of text chunks from a Weave reference, encodes the text
-        chunks using the article encoder model, and stores the resulting vector index. If an
-        index name is provided, the vector index is saved to a file using the `save_vector_index`
-        function.
+        This method retrieves a dataset of text chunks from a specified source, encodes the text
+        chunks into vector representations using the article encoder model, and stores the
+        resulting vector index. If an `index_repo_id` is provided, the vector index is saved
+        to disk in the safetensors format and optionally logged as a Huggingface artifact.
 
         !!! example "Example Usage"
             ```python
@@ -109,9 +109,10 @@ class MedCPTRetriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
-            index_name (Optional[str]): The name to use when saving the vector index. If not provided,
-                the vector index is not saved.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
 
         """
         self._chunk_dataset = (
@@ -169,11 +170,13 @@ class MedCPTRetriever(weave.Model):
     @classmethod
     def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
         """
-        Initializes an instance of the class from a Weave artifact.
+        Creates an instance of the class from a Huggingface repository.
 
-        This method retrieves a precomputed vector index and its associated metadata from a Weave artifact
-        stored in Weights & Biases (wandb). It then loads the vector index into memory and initializes an
-        instance of the class with the retrieved model names, vector index, and chunk dataset.
+        This method retrieves a vector index and metadata from a Huggingface repository.
+        It also retrieves a dataset of text chunks from the specified source. The vector
+        index is loaded from a safetensors file and moved to the appropriate device (CPU or GPU).
+        The method then returns an instance of the class initialized with the retrieved
+        model names, vector index, and chunk dataset.
 
         !!! example "Example Usage"
             ```python
@@ -192,8 +195,9 @@ class MedCPTRetriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
-            index_artifact_address (str): The address of the Weave artifact containing the precomputed vector index.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index, and chunk dataset.

@@ -56,10 +56,10 @@ class BM25sRetriever(weave.Model):
         """
         Indexes a dataset of text chunks using the BM25 algorithm.
 
-        This function takes a dataset of text chunks identified by `chunk_dataset_name`,
-        tokenizes the text using the BM25 tokenizer with optional stemming, and indexes
-        the tokenized text using the BM25 retriever. If an `index_name` is provided, the
-        index is saved to disk and logged as a Weights & Biases artifact.
+        This method retrieves a dataset of text chunks from a specified source, tokenizes
+        the text using the BM25 tokenizer with optional stemming, and indexes the tokenized
+        text using the BM25 retriever. If an `index_repo_id` is provided, the index is saved
+        to disk and optionally logged as a Huggingface artifact.
 
         !!! example "Example Usage"
             ```python
@@ -78,9 +78,10 @@ class BM25sRetriever(weave.Model):
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
-            index_name (Optional[str]): The name to save the index under. If provided, the index
-                is saved to disk and logged as a Weights & Biases artifact.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
         """
         chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -123,9 +124,9 @@ class BM25sRetriever(weave.Model):
     @classmethod
     def from_index(cls, index_repo_id: str):
         """
-        Creates an instance of the class from a Weights & Biases artifact.
+        Creates an instance of the class from a Huggingface repository.
 
-        This class method retrieves a BM25 index artifact from Weights & Biases,
+        This class method retrieves a BM25 index artifact from a Huggingface repository,
         downloads the artifact, and loads the BM25 retriever with the index and its
         associated corpus. The method also extracts metadata from the artifact to
         initialize the class instance with the appropriate language and stemming
@@ -145,8 +146,7 @@ class BM25sRetriever(weave.Model):
             ```
 
         Args:
-            index_artifact_address (str): The address of the Weights & Biases artifact
-                containing the BM25 index.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the BM25 retriever and metadata
