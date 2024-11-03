@@ -10,10 +10,7 @@ import weave
 from datasets import Dataset, load_dataset
 from sentence_transformers import SentenceTransformer
 
-from medrag_multi_modal.retrieval.common import (
-    SimilarityMetric,
-    argsort_scores,
-)
+from medrag_multi_modal.retrieval.common import SimilarityMetric, argsort_scores
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
     get_torch_backend,
