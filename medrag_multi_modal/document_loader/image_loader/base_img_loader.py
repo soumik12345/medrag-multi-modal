@@ -19,7 +19,7 @@ from datasets import (
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
-from medrag_multi_modal.utils import is_existing_dataset_repo
+from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 
 class BaseImageLoader(BaseTextLoader):
@@ -87,13 +87,13 @@ class BaseImageLoader(BaseTextLoader):
 
         dataset = Dataset.from_list(all_examples, features=features)
 
-        if is_existing_dataset_repo(dataset_repo_id):
-            if not overwrite_dataset:
-                dataset = concatenate_datasets(
-                    [dataset, load_dataset(dataset_repo_id)["corpus"]]
-                )
-
         if dataset_repo_id:
+            if is_existing_huggingface_repo(dataset_repo_id):
+                if not overwrite_dataset:
+                    dataset = concatenate_datasets(
+                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                    )
+
             dataset.push_to_hub(dataset_repo_id, split="corpus")
 
         return dataset

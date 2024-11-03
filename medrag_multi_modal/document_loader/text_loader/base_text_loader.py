@@ -8,7 +8,7 @@ import rich
 from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
 
-from medrag_multi_modal.utils import is_existing_dataset_repo
+from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 
 class BaseTextLoader(ABC):
@@ -148,13 +148,12 @@ class BaseTextLoader(ABC):
             await task
 
         dataset = Dataset.from_list(pages)
-        if is_existing_dataset_repo(dataset_repo_id):
-            if not overwrite_dataset:
-                dataset = concatenate_datasets(
-                    [dataset, load_dataset(dataset_repo_id)["corpus"]]
-                )
-
         if dataset_repo_id:
+            if is_existing_huggingface_repo(dataset_repo_id):
+                if not overwrite_dataset:
+                    dataset = concatenate_datasets(
+                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                    )
             dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
 
         return dataset

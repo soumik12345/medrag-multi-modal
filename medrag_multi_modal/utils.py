@@ -54,7 +54,7 @@ def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
             return obj
 
 
-def is_existing_dataset_repo(repo_id: str) -> bool:
+def is_existing_huggingface_repo(repo_id: str) -> bool:
     api = HfApi()
     repo_url = api.repo_info(repo_id)
     return repo_url is not None
