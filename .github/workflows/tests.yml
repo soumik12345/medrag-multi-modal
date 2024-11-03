@@ -122,3 +122,17 @@ jobs:
           pip install -e ".[core, dev]"
           pytest -s tests/semantic_chunking.py
           deactivate
+  test-bm25s-retrieval:
+    name: test retrieval (bm25s)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get install -y poppler-utils
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/retrieval/bm25s.py
+          deactivate

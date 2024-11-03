@@ -1,12 +1,18 @@
+import json
 import os
-from glob import glob
-from typing import Optional
+import shutil
+from typing import Optional, Union
 
 import bm25s
 import weave
+from datasets import Dataset, load_dataset
 from Stemmer import Stemmer
 
-import wandb
+from medrag_multi_modal.utils import (
+    fetch_from_huggingface,
+    is_existing_dataset_repo,
+    save_to_huggingface,
+)
 
 LANGUAGE_DICT = {
     "english": "en",
@@ -27,8 +33,8 @@ class BM25sRetriever(weave.Model):
             a new instance is created.
     """
 
-    language: str
-    use_stemmer: bool
+    language: Optional[str]
+    use_stemmer: bool = True
     _retriever: Optional[bm25s.BM25]
 
     def __init__(
@@ -40,7 +46,12 @@ class BM25sRetriever(weave.Model):
         super().__init__(language=language, use_stemmer=use_stemmer)
         self._retriever = retriever or bm25s.BM25()
 
-    def index(self, chunk_dataset_name: str, index_name: Optional[str] = None):
+    def index(
+        self,
+        chunk_dataset: Union[Dataset, str],
+        index_repo_id: Optional[str] = None,
+        cleanup: bool = True,
+    ):
         """
         Indexes a dataset of text chunks using the BM25 algorithm.
 
@@ -54,14 +65,15 @@ class BM25sRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            import wandb
-            from medrag_multi_modal.retrieval import BM25sRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="bm25s-index")
             retriever = BM25sRetriever()
-            retriever.index(chunk_dataset_name="grays-anatomy-text:v13", index_name="grays-anatomy-bm25s")
+            retriever.index(
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+                index_repo_id="geekyrakshit/grays-anatomy-index",
+            )
             ```
 
         Args:
@@ -69,7 +81,11 @@ class BM25sRetriever(weave.Model):
             index_name (Optional[str]): The name to save the index under. If provided, the index
                 is saved to disk and logged as a Weights & Biases artifact.
         """
-        chunk_dataset = weave.ref(chunk_dataset_name).get().rows
+        chunk_dataset = (
+            load_dataset(chunk_dataset, split="chunks")
+            if isinstance(chunk_dataset, str)
+            else chunk_dataset
+        )
         corpus = [row["text"] for row in chunk_dataset]
         corpus_tokens = bm25s.tokenize(
             corpus,
@@ -77,24 +93,32 @@ class BM25sRetriever(weave.Model):
             stemmer=Stemmer(self.language) if self.use_stemmer else None,
         )
         self._retriever.index(corpus_tokens)
-        if index_name:
+        if index_repo_id:
+            os.makedirs(".huggingface", exist_ok=True)
+            index_save_dir = os.path.join(".huggingface", index_repo_id.split("/")[-1])
             self._retriever.save(
-                index_name, corpus=[dict(row) for row in chunk_dataset]
+                index_save_dir, corpus=[dict(row) for row in chunk_dataset]
             )
-            if wandb.run:
-                artifact = wandb.Artifact(
-                    name=index_name,
-                    type="bm25s-index",
-                    metadata={
+            commit_type = "update" if is_existing_dataset_repo(index_repo_id) else "add"
+            with open(os.path.join(index_save_dir, "config.json"), "w") as config_file:
+                json.dump(
+                    {
                         "language": self.language,
                         "use_stemmer": self.use_stemmer,
                     },
+                    config_file,
+                    indent=4,
                 )
-                artifact.add_dir(index_name, name=index_name)
-                artifact.save()
+            save_to_huggingface(
+                index_repo_id,
+                index_save_dir,
+                commit_message=f"{commit_type}: BM25s index",
+            )
+            if cleanup:
+                shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_wandb_artifact(cls, index_artifact_address: str):
+    def from_index(cls, index_repo_id: str):
         """
         Creates an instance of the class from a Weights & Biases artifact.
 
@@ -109,13 +133,12 @@ class BM25sRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            from medrag_multi_modal.retrieval import BM25sRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = BM25sRetriever.from_wandb_artifact(
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:latest"
-            )
+            retriever = BM25sRetriever()
+            retriever = BM25sRetriever().from_index(index_repo_id="geekyrakshit/grays-anatomy-index")
             ```
 
         Args:
@@ -126,24 +149,11 @@ class BM25sRetriever(weave.Model):
             An instance of the class initialized with the BM25 retriever and metadata
             from the artifact.
         """
-        if wandb.run:
-            artifact = wandb.run.use_artifact(
-                index_artifact_address, type="bm25s-index"
-            )
-            artifact_dir = artifact.download()
-        else:
-            api = wandb.Api()
-            artifact = api.artifact(index_artifact_address)
-            artifact_dir = artifact.download()
-        retriever = bm25s.BM25.load(
-            glob(os.path.join(artifact_dir, "*"))[0], load_corpus=True
-        )
-        metadata = artifact.metadata
-        return cls(
-            language=metadata["language"],
-            use_stemmer=metadata["use_stemmer"],
-            retriever=retriever,
-        )
+        index_dir = fetch_from_huggingface(index_repo_id, ".huggingface")
+        retriever = bm25s.BM25.load(index_dir, load_corpus=True)
+        with open(os.path.join(index_dir, "config.json"), "r") as config_file:
+            config = json.load(config_file)
+        return cls(retriever=retriever, **config)
 
     @weave.op()
     def retrieve(self, query: str, top_k: int = 2):
@@ -155,6 +165,20 @@ class BM25sRetriever(weave.Model):
         the top-k most relevant chunks from the BM25 index based on the tokenized query.
         The results are returned as a list of dictionaries, each containing a chunk and
         its corresponding relevance score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = BM25sRetriever()
+            retriever = BM25sRetriever().from_index(index_repo_id="geekyrakshit/grays-anatomy-index")
+            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
+            ```
 
         Args:
             query (str): The input query string to search for relevant chunks.
@@ -193,13 +217,12 @@ class BM25sRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            from medrag_multi_modal.retrieval import BM25sRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = BM25sRetriever.from_wandb_artifact(
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-bm25s:latest"
-            )
+            retriever = BM25sRetriever()
+            retriever = BM25sRetriever().from_index(index_repo_id="geekyrakshit/grays-anatomy-index")
             retrieved_chunks = retriever.predict(query="What are Ribosomes?")
             ```
 

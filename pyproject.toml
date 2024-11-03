@@ -67,7 +67,7 @@ core = [
     "safetensors>=0.4.5",
     "semchunk>=2.2.0",
     "tiktoken>=0.8.0",
-    "weave>=0.51.14",
+    "weave>=0.51.18",
     "sentence-transformers>=3.2.0",
     "google-generativeai>=0.8.3",
     "mistralai>=1.1.0",
@@ -100,3 +100,6 @@ medrag = "medrag_multi_modal.cli:main"
 pythonpath = "."
 testpaths = ["tests"]
 filterwarnings = "ignore::DeprecationWarning"
+
+[tool.setuptools]
+py-modules = ["medrag_multi_modal"]

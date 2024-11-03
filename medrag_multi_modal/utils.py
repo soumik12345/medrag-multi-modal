@@ -56,8 +56,38 @@ def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
 
 def is_existing_dataset_repo(repo_id: str) -> bool:
     api = HfApi()
-    try:
-        api.dataset_info(repo_id)
-        return True
-    except Exception:
-        return False
+    repo_url = api.repo_info(repo_id)
+    return repo_url is not None
+
+
+def save_to_huggingface(
+    repo_id: str, local_dir: str, commit_message: str, private: bool = False
+):
+    api = HfApi()
+    repo_url = api.create_repo(
+        repo_id=repo_id,
+        token=api.token,
+        private=private,
+        repo_type="model",
+        exist_ok=True,
+    )
+    repo_id = repo_url.repo_id
+    api.upload_folder(
+        repo_id=repo_id,
+        commit_message=commit_message,
+        token=api.token,
+        folder_path=local_dir,
+        repo_type=repo_url.repo_type,
+    )
+
+
+def fetch_from_huggingface(repo_id: str, local_dir: str) -> str:
+    api = HfApi()
+    repo_url = api.repo_info(repo_id)
+    if repo_url is None:
+        raise ValueError(f"Model {repo_id} not found on the Hugging Face Hub.")
+
+    snapshot = api.snapshot_download(repo_id, revision=None, local_dir=local_dir)
+    if snapshot is None:
+        raise ValueError(f"Model {repo_id} not found on the Hugging Face Hub.")
+    return snapshot
