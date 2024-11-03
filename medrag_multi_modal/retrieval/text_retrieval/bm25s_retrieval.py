@@ -10,7 +10,7 @@ from Stemmer import Stemmer
 
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
-    is_existing_dataset_repo,
+    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -99,7 +99,7 @@ class BM25sRetriever(weave.Model):
             self._retriever.save(
                 index_save_dir, corpus=[dict(row) for row in chunk_dataset]
             )
-            commit_type = "update" if is_existing_dataset_repo(index_repo_id) else "add"
+            commit_type = "update" if is_existing_huggingface_repo(index_repo_id) else "add"
             with open(os.path.join(index_save_dir, "config.json"), "w") as config_file:
                 json.dump(
                     {
