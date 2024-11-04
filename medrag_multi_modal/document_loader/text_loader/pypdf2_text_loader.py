@@ -23,7 +23,7 @@ class PyPDF2TextLoader(BaseTextLoader):
     !!! example "Example Usage"
         ```python
         import asyncio
-        
+
         from medrag_multi_modal.document_loader import PyPDF2TextLoader
 
         URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
