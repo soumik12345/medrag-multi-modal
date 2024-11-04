@@ -6,10 +6,10 @@ import weave
 if TYPE_CHECKING:
     from byaldi import RAGMultiModalModel
 
-import wandb
 from PIL import Image
 
-from ..utils import get_wandb_artifact
+import wandb
+from medrag_multi_modal.utils import get_wandb_artifact
 
 
 class CalPaliRetriever(weave.Model):

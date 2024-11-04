@@ -1,40 +1,13 @@
 # MedRAG Multi-Modal
 
-Multi-modal RAG for medical docmain.
+[![Documentation](https://img.shields.io/badge/MedRaG-docs-blue)](https://geekyrakshit.dev/medrag-multi-modal)
+
+An ongoing journey to build a robust and scaleable multi-modal question answering system for the domain of medicine and life sciences powered by SoTA generative AI, NLP, and computer vision models.
 
 ## Installation
-
-### For Development
-
-For MacOS, you need to run
-
-```bash
-brew install poppler
-```
-
-For Debian/Ubuntu, you need to run
-
-```bash
-sudo apt-get install -y poppler-utils
-```
-
-Then, you can install the dependencies using uv in the virtual environment `.venv` using
 
 ```bash
 git clone https://github.com/soumik12345/medrag-multi-modal
 cd medrag-multi-modal
-pip install -U pip uv
-uv sync
-```
-
-After this, you need to activate the virtual environment using
-
-```bash
-source .venv/bin/activate
-```
-
-In the activated virtual environment, you can optionally install Flash Attention (required for ColPali) using
-
-```bash
-uv pip install flash-attn --no-build-isolation
+sh install.sh
 ```

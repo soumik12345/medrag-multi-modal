@@ -2,7 +2,9 @@ from typing import Dict
 
 import pymupdf4llm
 
-from .base_text_loader import BaseTextLoader
+from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
+    BaseTextLoader,
+)
 
 
 class PyMuPDF4LLMTextLoader(BaseTextLoader):
@@ -20,26 +22,16 @@ class PyMuPDF4LLMTextLoader(BaseTextLoader):
         ```python
         import asyncio
 
-        import weave
+        from medrag_multi_modal.document_loader import PyMuPDF4LLMTextLoader
 
-        from medrag_multi_modal.document_loader.text_loader import (
-            PyMuPDF4LLMTextLoader
-        )
+        URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
 
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
-        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
         loader = PyMuPDF4LLMTextLoader(
-            url=url,
+            url=URL,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
         )
-        asyncio.run(
-            loader.load_data(
-                start_page=31,
-                end_page=36,
-                weave_dataset_name="grays-anatomy-text",
-            )
-        )
+        dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
         ```
 
     Args:

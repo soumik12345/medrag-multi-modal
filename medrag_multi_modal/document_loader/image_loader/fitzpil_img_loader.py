@@ -3,9 +3,12 @@ import os
 from typing import Any, Dict
 
 import fitz
+from pdf2image.pdf2image import convert_from_path
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .base_img_loader import BaseImageLoader
+from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
+    BaseImageLoader,
+)
 
 
 class FitzPILImageLoader(BaseImageLoader):
@@ -20,27 +23,16 @@ class FitzPILImageLoader(BaseImageLoader):
         ```python
         import asyncio
 
-        import weave
-
-        import wandb
         from medrag_multi_modal.document_loader.image_loader import FitzPILImageLoader
 
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
-        wandb.init(project="medrag-multi-modal", entity="ml-colabs")
-        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+        URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+
         loader = FitzPILImageLoader(
-            url=url,
+            url=URL,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
         )
-        asyncio.run(
-            loader.load_data(
-                start_page=32,
-                end_page=37,
-                wandb_artifact_name="grays-anatomy-images-fitzpil",
-                cleanup=False,
-            )
-        )
+        dataset = asyncio.run(loader.load_data(start_page=32, end_page=37))
         ```
 
     Args:
@@ -117,6 +109,14 @@ class FitzPILImageLoader(BaseImageLoader):
                 continue
 
         pdf_document.close()
+
+        page_image = convert_from_path(
+            self.document_file_path,
+            first_page=page_idx + 1,
+            last_page=page_idx + 1,
+            **kwargs,
+        )[0]
+        page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
 
         return {
             "page_idx": page_idx,

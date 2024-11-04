@@ -1,12 +1,14 @@
 import asyncio
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import PyPDF2
 import rich
-import weave
+from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
+
+from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 
 class BaseTextLoader(ABC):
@@ -29,7 +31,7 @@ class BaseTextLoader(ABC):
         self.document_name = document_name
         self.document_file_path = document_file_path
         if not os.path.exists(self.document_file_path):
-            FireRequests().download(url, filename=self.document_file_path)
+            FireRequests().download(url, filenames=self.document_file_path)
         with open(self.document_file_path, "rb") as file:
             pdf_reader = PyPDF2.PdfReader(file)
             self.page_count = len(pdf_reader.pages)
@@ -85,9 +87,10 @@ class BaseTextLoader(ABC):
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
-        weave_dataset_name: Optional[str] = None,
+        dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
         **kwargs,
-    ) -> List[Dict[str, str]]:
+    ) -> Dataset:
         """
         Asynchronously loads text from a PDF file specified by a URL or local file path.
         The overrided processing abstract method then processes the text into markdown format,
@@ -102,23 +105,25 @@ class BaseTextLoader(ABC):
         each page, extract the text from the PDF, and convert it to markdown.
         It processes pages concurrently using `asyncio` for efficiency.
 
-        If a weave_dataset_name is provided, the processed pages are published to a Weave dataset.
+        If a `dataset_repo_id` is provided, the processed pages are published to a HuggingFace dataset.
 
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
-            weave_dataset_name (Optional[str]): The name of the Weave dataset to publish the pages to, if provided.
+            dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries, each containing the text and metadata for a processed page.
-            Each dictionary will have the following keys and values:
+            Dataset: A HuggingFace Dataset object containing the text and metadata for processed pages.
+            Each entry in the dataset will have the following keys and values:
 
             - "text": (str) the processed page data in markdown format.
             - "page_idx": (int) the index of the page.
             - "document_name": (str) the name of the document.
             - "file_path": (str) the local file path where the PDF is stored.
             - "file_url": (str) the URL of the PDF file.
+            - "loader_name": (str) the name of the loader class used to process the page.
 
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
@@ -142,6 +147,13 @@ class BaseTextLoader(ABC):
         for task in asyncio.as_completed(tasks):
             await task
 
-        if weave_dataset_name:
-            weave.publish(weave.Dataset(name=weave_dataset_name, rows=pages))
-        return pages
+        dataset = Dataset.from_list(pages)
+        if dataset_repo_id:
+            if is_existing_huggingface_repo(dataset_repo_id):
+                if not overwrite_dataset:
+                    dataset = concatenate_datasets(
+                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                    )
+            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
+
+        return dataset

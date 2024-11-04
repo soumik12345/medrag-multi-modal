@@ -1,11 +1,14 @@
+import json
 import os
-from typing import Optional
+import shutil
+from typing import Optional, Union
 
 import safetensors
 import safetensors.torch
 import torch
 import torch.nn.functional as F
 import weave
+from datasets import Dataset, load_dataset
 from transformers import (
     AutoModel,
     AutoTokenizer,
@@ -13,8 +16,13 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 
-from ..utils import get_torch_backend, get_wandb_artifact
-from .common import SimilarityMetric, argsort_scores, save_vector_index
+from medrag_multi_modal.retrieval.common import SimilarityMetric, argsort_scores
+from medrag_multi_modal.utils import (
+    fetch_from_huggingface,
+    get_torch_backend,
+    is_existing_huggingface_repo,
+    save_to_huggingface,
+)
 
 
 class MedCPTRetriever(weave.Model):
@@ -45,8 +53,8 @@ class MedCPTRetriever(weave.Model):
 
     def __init__(
         self,
-        query_encoder_model_name: str,
-        article_encoder_model_name: str,
+        query_encoder_model_name: str = "ncbi/MedCPT-Query-Encoder",
+        article_encoder_model_name: str = "ncbi/MedCPT-Article-Encoder",
         chunk_size: Optional[int] = None,
         vector_index: Optional[torch.Tensor] = None,
         chunk_dataset: Optional[list[dict]] = None,
@@ -71,43 +79,47 @@ class MedCPTRetriever(weave.Model):
         self._chunk_dataset = chunk_dataset
         self._vector_index = vector_index
 
-    def index(self, chunk_dataset_name: str, index_name: Optional[str] = None):
+    def index(
+        self,
+        chunk_dataset: Union[str, Dataset],
+        index_repo_id: Optional[str] = None,
+        cleanup: bool = True,
+    ):
         """
-        Indexes a dataset of text chunks and optionally saves the vector index.
+        Indexes a dataset of text chunks using the MedCPT model and optionally saves the vector index.
 
-        This method retrieves a dataset of text chunks from a Weave reference, encodes the text
-        chunks using the article encoder model, and stores the resulting vector index. If an
-        index name is provided, the vector index is saved to a file using the `save_vector_index`
-        function.
+        This method retrieves a dataset of text chunks from a specified source, encodes the text
+        chunks into vector representations using the article encoder model, and stores the
+        resulting vector index. If an `index_repo_id` is provided, the vector index is saved
+        to disk in the safetensors format and optionally logged as a Huggingface artifact.
 
         !!! example "Example Usage"
             ```python
             import weave
             from dotenv import load_dotenv
 
-            import wandb
-            from medrag_multi_modal.retrieval import MedCPTRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
             load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="medcpt-index")
-            retriever = MedCPTRetriever(
-                query_encoder_model_name="ncbi/MedCPT-Query-Encoder",
-                article_encoder_model_name="ncbi/MedCPT-Article-Encoder",
-            )
+            retriever = MedCPTRetriever()
             retriever.index(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_name="grays-anatomy-medcpt",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
             )
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
-            index_name (Optional[str]): The name to use when saving the vector index. If not provided,
-                the vector index is not saved.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
 
         """
-        self._chunk_dataset = weave.ref(chunk_dataset_name).get().rows
+        self._chunk_dataset = (
+            load_dataset(chunk_dataset, split="chunks")
+            if isinstance(chunk_dataset, str)
+            else chunk_dataset
+        )
         corpus = [row["text"] for row in self._chunk_dataset]
         with torch.no_grad():
             encoded = self._article_tokenizer(
@@ -123,60 +135,87 @@ class MedCPTRetriever(weave.Model):
                 .contiguous()
             )
             self._vector_index = vector_index
-            if index_name:
-                save_vector_index(
-                    self._vector_index,
-                    "medcpt-index",
-                    index_name,
-                    {
-                        "query_encoder_model_name": self.query_encoder_model_name,
-                        "article_encoder_model_name": self.article_encoder_model_name,
-                        "chunk_size": self.chunk_size,
-                    },
+            if index_repo_id:
+                index_save_dir = os.path.join(
+                    ".huggingface", index_repo_id.split("/")[-1]
                 )
+                os.makedirs(index_save_dir, exist_ok=True)
+                safetensors.torch.save_file(
+                    {"vector_index": self._vector_index.cpu()},
+                    os.path.join(index_save_dir, "vector_index.safetensors"),
+                )
+                commit_type = (
+                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                )
+                with open(
+                    os.path.join(index_save_dir, "config.json"), "w"
+                ) as config_file:
+                    json.dump(
+                        {
+                            "query_encoder_model_name": self.query_encoder_model_name,
+                            "article_encoder_model_name": self.article_encoder_model_name,
+                            "chunk_size": self.chunk_size,
+                        },
+                        config_file,
+                        indent=4,
+                    )
+                save_to_huggingface(
+                    index_repo_id,
+                    index_save_dir,
+                    commit_message=f"{commit_type}: Contriever index",
+                )
+                if cleanup:
+                    shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_wandb_artifact(cls, chunk_dataset_name: str, index_artifact_address: str):
+    def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
         """
-        Initializes an instance of the class from a Weave artifact.
+        Creates an instance of the class from a Huggingface repository.
 
-        This method retrieves a precomputed vector index and its associated metadata from a Weave artifact
-        stored in Weights & Biases (wandb). It then loads the vector index into memory and initializes an
-        instance of the class with the retrieved model names, vector index, and chunk dataset.
+        This method retrieves a vector index and metadata from a Huggingface repository.
+        It also retrieves a dataset of text chunks from the specified source. The vector
+        index is loaded from a safetensors file and moved to the appropriate device (CPU or GPU).
+        The method then returns an instance of the class initialized with the retrieved
+        model names, vector index, and chunk dataset.
 
         !!! example "Example Usage"
             ```python
             import weave
             from dotenv import load_dotenv
 
-            import wandb
-            from medrag_multi_modal.retrieval import MedCPTRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
+            retriever = MedCPTRetriever()
+            retriever = MedCPTRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
             )
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the dataset containing text chunks to be indexed.
-            index_artifact_address (str): The address of the Weave artifact containing the precomputed vector index.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index, and chunk dataset.
         """
-        artifact_dir, metadata = get_wandb_artifact(
-            index_artifact_address, "medcpt-index", get_metadata=True
-        )
+        index_dir = fetch_from_huggingface(index_repo_id, ".huggingface")
         with safetensors.torch.safe_open(
-            os.path.join(artifact_dir, "vector_index.safetensors"), framework="pt"
+            os.path.join(index_dir, "vector_index.safetensors"), framework="pt"
         ) as f:
             vector_index = f.get_tensor("vector_index")
         device = torch.device(get_torch_backend())
         vector_index = vector_index.to(device)
-        chunk_dataset = [dict(row) for row in weave.ref(chunk_dataset_name).get().rows]
+        with open(os.path.join(index_dir, "config.json"), "r") as config_file:
+            metadata = json.load(config_file)
+        chunk_dataset = (
+            load_dataset(chunk_dataset, split="chunks")
+            if isinstance(chunk_dataset, str)
+            else chunk_dataset
+        )
         return cls(
             query_encoder_model_name=metadata["query_encoder_model_name"],
             article_encoder_model_name=metadata["article_encoder_model_name"],
@@ -199,6 +238,23 @@ class MedCPTRetriever(weave.Model):
         the query embedding and the precomputed vector index. The similarity metric can be either
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = MedCPTRetriever()
+            retriever = MedCPTRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+            )
+            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
+            ```
 
         Args:
             query (str): The input query string to search for relevant chunks.
@@ -256,16 +312,16 @@ class MedCPTRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            import wandb
-            from medrag_multi_modal.retrieval import MedCPTRetriever
+            from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
+            retriever = MedCPTRetriever()
+            retriever = MedCPTRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
             )
-            retriever.predict(query="What are Ribosomes?")
+            retrieved_chunks = retriever.predict(query="What are Ribosomes?")
             ```
 
         Args:

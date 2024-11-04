@@ -1,11 +1,14 @@
+import json
 import os
-from typing import Optional
+import shutil
+from typing import Optional, Union
 
 import safetensors
 import safetensors.torch
 import torch
 import torch.nn.functional as F
 import weave
+from datasets import Dataset, load_dataset
 from transformers import (
     AutoModel,
     AutoTokenizer,
@@ -13,8 +16,17 @@ from transformers import (
     PreTrainedTokenizerFast,
 )
 
-from ..utils import get_torch_backend, get_wandb_artifact
-from .common import SimilarityMetric, argsort_scores, mean_pooling, save_vector_index
+from medrag_multi_modal.retrieval.common import (
+    SimilarityMetric,
+    argsort_scores,
+    mean_pooling,
+)
+from medrag_multi_modal.utils import (
+    fetch_from_huggingface,
+    get_torch_backend,
+    is_existing_huggingface_repo,
+    save_to_huggingface,
+)
 
 
 class ContrieverRetriever(weave.Model):
@@ -56,7 +68,12 @@ class ContrieverRetriever(weave.Model):
         outputs = self._model(**inputs)
         return mean_pooling(outputs[0], inputs["attention_mask"])
 
-    def index(self, chunk_dataset_name: str, index_name: Optional[str] = None):
+    def index(
+        self,
+        chunk_dataset: Union[str, Dataset],
+        index_repo_id: Optional[str] = None,
+        cleanup: bool = True,
+    ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a file.
 
@@ -71,40 +88,61 @@ class ContrieverRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            import wandb
-            from medrag_multi_modal.retrieval import ContrieverRetriever, SimilarityMetric
+            from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
             load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            wandb.init(project="medrag-multi-modal", entity="ml-colabs", job_type="contriever-index")
-            retriever = ContrieverRetriever(model_name="facebook/contriever")
+            retriever = ContrieverRetriever()
             retriever.index(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_name="grays-anatomy-contriever",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+                index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
             )
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks
-                to be indexed.
-            index_name (Optional[str]): The name of the index artifact to be saved. If provided,
-                the vector index is saved to a file and logged as an artifact to Weave.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
         """
-        self._chunk_dataset = weave.ref(chunk_dataset_name).get().rows
+        self._chunk_dataset = (
+            load_dataset(chunk_dataset, split="chunks")
+            if isinstance(chunk_dataset, str)
+            else chunk_dataset
+        )
         corpus = [row["text"] for row in self._chunk_dataset]
         with torch.no_grad():
             vector_index = self.encode(corpus)
             self._vector_index = vector_index
-            if index_name:
-                save_vector_index(
-                    self._vector_index,
-                    "contriever-index",
-                    index_name,
-                    {"model_name": self.model_name},
+            if index_repo_id:
+                index_save_dir = os.path.join(
+                    ".huggingface", index_repo_id.split("/")[-1]
                 )
+                os.makedirs(index_save_dir, exist_ok=True)
+                safetensors.torch.save_file(
+                    {"vector_index": vector_index.cpu()},
+                    os.path.join(index_save_dir, "vector_index.safetensors"),
+                )
+                commit_type = (
+                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                )
+                with open(
+                    os.path.join(index_save_dir, "config.json"), "w"
+                ) as config_file:
+                    json.dump(
+                        {"model_name": self.model_name},
+                        config_file,
+                        indent=4,
+                    )
+                save_to_huggingface(
+                    index_repo_id,
+                    index_save_dir,
+                    commit_message=f"{commit_type}: Contriever index",
+                )
+                if cleanup:
+                    shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_wandb_artifact(cls, chunk_dataset_name: str, index_artifact_address: str):
+    def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
         """
         Creates an instance of the class from a Weave artifact.
 
@@ -120,35 +158,38 @@ class ContrieverRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            from medrag_multi_modal.retrieval import ContrieverRetriever, SimilarityMetric
+            from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
             load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = ContrieverRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-contriever:v1",
+            retriever = ContrieverRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
             )
             ```
 
         Args:
-            chunk_dataset_name (str): The name of the Weave dataset containing the text chunks.
-            index_artifact_address (str): The address of the Weave artifact containing the
-                vector index.
+            chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
+                dataset repository name or a dataset object can be provided.
+            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index,
             and chunk dataset.
         """
-        artifact_dir, metadata = get_wandb_artifact(
-            index_artifact_address, "contriever-index", get_metadata=True
-        )
+        index_dir = fetch_from_huggingface(index_repo_id, ".huggingface")
         with safetensors.torch.safe_open(
-            os.path.join(artifact_dir, "vector_index.safetensors"), framework="pt"
+            os.path.join(index_dir, "vector_index.safetensors"), framework="pt"
         ) as f:
             vector_index = f.get_tensor("vector_index")
         device = torch.device(get_torch_backend())
         vector_index = vector_index.to(device)
-        chunk_dataset = [dict(row) for row in weave.ref(chunk_dataset_name).get().rows]
+        chunk_dataset = (
+            load_dataset(chunk_dataset, split="chunks")
+            if isinstance(chunk_dataset, str)
+            else chunk_dataset
+        )
+        with open(os.path.join(index_dir, "config.json"), "r") as config_file:
+            metadata = json.load(config_file)
         return cls(
             model_name=metadata["model_name"],
             vector_index=vector_index,
@@ -169,6 +210,22 @@ class ContrieverRetriever(weave.Model):
         the query embedding and the precomputed vector index. The similarity metric can be either
         cosine similarity or Euclidean distance. The top-k chunks with the highest similarity scores
         are returned as a list of dictionaries, each containing a chunk and its corresponding score.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from dotenv import load_dotenv
+
+            from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
+
+            load_dotenv()
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = ContrieverRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+            )
+            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
+            ```
 
         Args:
             query (str): The input query string to search for relevant chunks.
@@ -218,15 +275,15 @@ class ContrieverRetriever(weave.Model):
             import weave
             from dotenv import load_dotenv
 
-            from medrag_multi_modal.retrieval import ContrieverRetriever, SimilarityMetric
+            from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
             load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = ContrieverRetriever.from_wandb_artifact(
-                chunk_dataset_name="grays-anatomy-chunks:v0",
-                index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-contriever:v1",
+            retriever = ContrieverRetriever().from_index(
+                index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
+                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
             )
-            scores = retriever.predict(query="What are Ribosomes?", metric=SimilarityMetric.COSINE)
+            retrieved_chunks = retriever.predict(query="What are Ribosomes?")
             ```
 
         Args:

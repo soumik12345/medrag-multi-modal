@@ -7,14 +7,13 @@ requires-python = ">=3.10"
 dependencies = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
-    "datasets>=3.0.1",
+    "datasets>=3.1.0",
     "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",
     "pdf2image>=1.17.0",
     "python-dotenv>=1.0.1",
     "pymupdf4llm>=0.0.17",
-    "torch>=2.4.1",
     "weave>=0.51.14",
     "pip>=24.2",
     "uv>=0.4.20",
@@ -54,7 +53,7 @@ app = [
 core = [
     "adapters>=1.0.0",
     "bm25s[full]>=0.2.2",
-    "datasets>=3.0.1",
+    "datasets>=3.1.0",
     "einops>=0.8.0",
     "firerequests>=0.0.7",
     "jax[cpu]>=0.4.34",
@@ -68,8 +67,7 @@ core = [
     "safetensors>=0.4.5",
     "semchunk>=2.2.0",
     "tiktoken>=0.8.0",
-    "torch>=2.4.1",
-    "weave>=0.51.14",
+    "weave>=0.51.18",
     "sentence-transformers>=3.2.0",
     "google-generativeai>=0.8.3",
     "mistralai>=1.1.0",
@@ -100,6 +98,8 @@ medrag = "medrag_multi_modal.cli:main"
 
 [tool.pytest.ini_options]
 pythonpath = "."
+testpaths = ["tests"]
+filterwarnings = "ignore::DeprecationWarning"
 
 [tool.setuptools]
 py-modules = ["medrag_multi_modal"]

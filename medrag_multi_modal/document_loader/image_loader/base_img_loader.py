@@ -1,15 +1,25 @@
 import asyncio
 import os
 from abc import abstractmethod
+from glob import glob
 from typing import Dict, List, Optional
 
 import jsonlines
 import rich
-import wandb
+from datasets import (
+    Dataset,
+    Features,
+    Image,
+    Sequence,
+    Value,
+    concatenate_datasets,
+    load_dataset,
+)
 
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
+from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 
 class BaseImageLoader(BaseTextLoader):
@@ -36,14 +46,72 @@ class BaseImageLoader(BaseTextLoader):
         """
         pass
 
+    def save_as_dataset(
+        self,
+        start_page: int,
+        end_page: int,
+        image_save_dir: str,
+        dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
+    ):
+        features = Features(
+            {
+                "page_image": Image(decode=True),
+                "page_figure_images": Sequence(Image(decode=True)),
+                "document_name": Value(dtype="string"),
+                "page_idx": Value(dtype="int32"),
+            }
+        )
+
+        all_examples = []
+        for page_idx in range(start_page, end_page):
+            page_image_file_paths = glob(
+                os.path.join(image_save_dir, f"page{page_idx}*.png")
+            )
+            if len(page_image_file_paths) > 0:
+                page_image_path = page_image_file_paths[0]
+                figure_image_paths = [
+                    image_file_path
+                    for image_file_path in glob(
+                        os.path.join(image_save_dir, f"page{page_idx}*_fig*.png")
+                    )
+                ]
+
+                example = {
+                    "page_image": page_image_path,
+                    "page_figure_images": figure_image_paths,
+                    "document_name": self.document_name,
+                    "page_idx": page_idx,
+                }
+                all_examples.append(example)
+
+        dataset = Dataset.from_list(all_examples, features=features)
+
+        if dataset_repo_id:
+            if is_existing_huggingface_repo(dataset_repo_id):
+                if not overwrite_dataset:
+                    dataset = concatenate_datasets(
+                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                    )
+
+            dataset.push_to_hub(dataset_repo_id, split="corpus")
+
+        return dataset
+
+    def cleanup_image_dir(self, image_save_dir: str = "./images"):
+        for file in os.listdir(image_save_dir):
+            file_path = os.path.join(image_save_dir, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
     async def load_data(
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
-        wandb_artifact_name: Optional[str] = None,
+        dataset_repo_id: Optional[str] = None,
+        overwrite_dataset: bool = False,
         image_save_dir: str = "./images",
         exclude_file_extensions: list[str] = [],
-        cleanup: bool = False,
         **kwargs,
     ) -> List[Dict[str, str]]:
         """
@@ -65,21 +133,15 @@ class BaseImageLoader(BaseTextLoader):
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process.
             end_page (Optional[int]): The ending page index (0-based) to process.
-            wandb_artifact_name (Optional[str]): The name of the WandB artifact to publish the pages to, if provided.
+            dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             image_save_dir (str): The directory to save the extracted images.
             exclude_file_extensions (list[str]): A list of file extensions to exclude from the image_save_dir.
-            cleanup (bool): Whether to remove extracted images from `image_save_dir`, if uploading to wandb artifact.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries, each containing the image and metadata for a processed page.
-            Each dictionary will have the following keys and values:
+            Dataset: A HuggingFace dataset containing the processed pages.
 
-            - "page_idx": (int) the index of the page.
-            - "document_name": (str) the name of the document.
-            - "file_path": (str) the local file path where the PDF is stored.
-            - "file_url": (str) the URL of the PDF file.
-            - "image_file_path" or "image_file_paths": (str) the local file path where the image/images are stored.
         Raises:
             ValueError: If the specified start_page or end_page is out of bounds of the document's page count.
         """
@@ -111,19 +173,8 @@ class BaseImageLoader(BaseTextLoader):
             if file.endswith(tuple(exclude_file_extensions)):
                 os.remove(os.path.join(image_save_dir, file))
 
-        if wandb_artifact_name:
-            artifact = wandb.Artifact(
-                name=wandb_artifact_name,
-                type="dataset",
-                metadata={"loader_name": self.__class__.__name__},
-            )
-            artifact.add_dir(local_path=image_save_dir)
-            artifact.save()
-            rich.print("Artifact saved and uploaded to wandb!")
+        dataset = self.save_as_dataset(
+            start_page, end_page, image_save_dir, dataset_repo_id, overwrite_dataset
+        )
 
-        if cleanup:
-            for file in os.listdir(image_save_dir):
-                file_path = os.path.join(image_save_dir, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-        return pages
+        return dataset

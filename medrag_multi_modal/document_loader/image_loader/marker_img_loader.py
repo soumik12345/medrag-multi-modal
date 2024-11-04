@@ -5,7 +5,9 @@ from marker.convert import convert_single_pdf
 from marker.models import load_all_models
 from pdf2image.pdf2image import convert_from_path
 
-from .base_img_loader import BaseImageLoader
+from medrag_multi_modal.document_loader.image_loader.base_img_loader import (
+    BaseImageLoader,
+)
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
@@ -22,27 +24,16 @@ class MarkerImageLoader(BaseImageLoader):
         ```python
         import asyncio
 
-        import weave
-
-        import wandb
         from medrag_multi_modal.document_loader.image_loader import MarkerImageLoader
 
-        weave.init(project_name="ml-colabs/medrag-multi-modal")
-        wandb.init(project="medrag-multi-modal", entity="ml-colabs")
-        url = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+        URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Grays%20Anatomy-41%20E%20%282015%29%20%5BPDF%5D.pdf"
+
         loader = MarkerImageLoader(
-            url=url,
+            url=URL,
             document_name="Gray's Anatomy",
             document_file_path="grays_anatomy.pdf",
         )
-        asyncio.run(
-            loader.load_data(
-                start_page=31,
-                end_page=36,
-                wandb_artifact_name="grays-anatomy-images-marker",
-                cleanup=False,
-            )
-        )
+        dataset = asyncio.run(loader.load_data(start_page=32, end_page=37))
         ```
 
     Args:
@@ -84,7 +75,7 @@ class MarkerImageLoader(BaseImageLoader):
             - "file_url": (str) the URL of the PDF file.
             - "image_file_path": (str) the local file path where the image is stored.
         """
-        _, images, out_meta = convert_single_pdf(
+        _, images, _ = convert_single_pdf(
             self.document_file_path,
             self.model_lst,
             max_pages=1,
@@ -101,14 +92,13 @@ class MarkerImageLoader(BaseImageLoader):
             image.save(image_file_path, "png")
             image_file_paths.append(image_file_path)
 
-        if self.save_page_image:
-            page_image = convert_from_path(
-                self.document_file_path,
-                first_page=page_idx + 1,
-                last_page=page_idx + 1,
-                **kwargs,
-            )[0]
-            page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
+        page_image = convert_from_path(
+            self.document_file_path,
+            first_page=page_idx + 1,
+            last_page=page_idx + 1,
+            **kwargs,
+        )[0]
+        page_image.save(os.path.join(image_save_dir, f"page{page_idx}.png"))
 
         return {
             "page_idx": page_idx,
@@ -116,7 +106,6 @@ class MarkerImageLoader(BaseImageLoader):
             "file_path": self.document_file_path,
             "file_url": self.url,
             "image_file_paths": os.path.join(image_save_dir, "*.png"),
-            "meta": out_meta,
         }
 
     def load_data(
