@@ -100,18 +100,23 @@ class LLMClient(weave.Model):
         user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel(self.model_name)
-        generation_config = (
-            None
-            if schema is None
-            else genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=list[schema]
-            )
+        model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
+        if schema is None:
+            response = model.generate_content(user_prompt)
+            return response.text
+        model = instructor.from_gemini(model, mode=instructor.Mode.GEMINI_JSON)
+        message_contents = []
+        for prompt in user_prompt:
+            if isinstance(prompt, Image.Image):
+                b64_image = base64_encode_image(prompt, "image/png")
+                image = instructor.Image.from_base64(b64_image)
+                message_contents.append(image)
+            else:
+                message_contents.append(prompt)
+        return model.chat.completions.create(
+            messages=[{"role": "user", "content": message_contents}],
+            response_model=schema,
         )
-        response = model.generate_content(
-            system_prompt + user_prompt, generation_config=generation_config
-        )
-        return response.text if schema is None else response
 
     @weave.op()
     def execute_mistral_sdk(
