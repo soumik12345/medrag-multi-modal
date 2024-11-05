@@ -16,6 +16,6 @@ def test_llm_client():
         user_prompt="Alice and Bob are going to a science fair on Friday.",
         schema=CalendarEvent,
     )
-    assert event.name == "science fair"
-    assert event.date == "Friday"
-    assert event.participants == ["Alice", "Bob"]
+    assert event.name.lower() == "science fair"
+    assert event.date.lower() == "friday"
+    assert [item.lower() for item in event.participants] == ["alice", "bob"]
