@@ -48,3 +48,15 @@ def test_google_llm_client():
     assert event.name.lower() == "science fair"
     assert event.date.lower() == "friday"
     assert [item.lower() for item in event.participants] == ["alice", "bob"]
+
+
+def test_google_image_client():
+    llm_client = LLMClient(
+        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
+    )
+    description = llm_client.predict(
+        system_prompt="Describe the image",
+        user_prompt=[Image.open("./assets/test_image.png")],
+        schema=CalendarEvent,
+    )
+    assert "astronaut" in description.description.lower()
