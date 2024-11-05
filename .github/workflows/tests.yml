@@ -175,6 +175,7 @@ jobs:
           pip install -U uv pip
           uv venv
           source .venv/bin/activate
-          pip install -e ".[core, dev]"
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install -e ".[core, dev]"
           pytest -s tests/assistant/llm_client.py
           deactivate
