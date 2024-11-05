@@ -44,10 +44,10 @@ def test_google_llm_client():
         system_prompt="Extract the event information",
         user_prompt="Alice and Bob are going to a science fair on Friday.",
         schema=CalendarEvent,
-    )
-    assert event.name.lower() == "science fair"
-    assert event.date.lower() == "friday"
-    assert [item.lower() for item in event.participants] == ["alice", "bob"]
+    )[0]
+    assert event["name"].lower() == "science fair"
+    assert event["date"].lower() == "friday"
+    assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
 
 
 def test_google_image_client():
@@ -58,5 +58,5 @@ def test_google_image_client():
         system_prompt="Describe the image",
         user_prompt=[Image.open("./assets/test_image.png")],
         schema=CalendarEvent,
-    )
-    assert "astronaut" in description.description.lower()
+    )[0]
+    assert "astronaut" in description["description"].lower()
