@@ -3,12 +3,11 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+import huggingface_hub
 import PyPDF2
-import rich
 from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
-
-from medrag_multi_modal.utils import is_existing_huggingface_repo
+from rich.progress import Progress
 
 
 class BaseTextLoader(ABC):
@@ -152,28 +151,33 @@ class BaseTextLoader(ABC):
                 if key not in page_data:
                     page_data[key] = value
             pages.append(page_data)
-            rich.print(
-                f"Processed page idx: {page_idx}, progress: {processed_pages_counter}/{total_pages}"
+            progress.update(
+                task_id, advance=1, description=f"Processing page {page_idx}"
             )
             processed_pages_counter += 1
 
-        tasks = [
-            process_page(page_idx)
-            for page_idx in range(start_page, end_page + 1)
-            if page_idx not in exclude_pages
-        ]
-        for task in asyncio.as_completed(tasks):
-            await task
+        progress = Progress()
+        with progress:
+            task_id = progress.add_task("Starting...", total=total_pages)
+            tasks = [
+                process_page(page_idx)
+                for page_idx in range(start_page, end_page + 1)
+                if page_idx not in exclude_pages
+            ]
+            for task in asyncio.as_completed(tasks):
+                await task
 
         pages.sort(key=lambda x: x["page_idx"])
 
-        dataset = Dataset.from_list(pages)
         if dataset_repo_id:
-            if is_existing_huggingface_repo(dataset_repo_id):
+            dataset = Dataset.from_list(pages)
+            if huggingface_hub.repo_exists(dataset_repo_id, repo_type="dataset"):
+                print("Dataset already exists")
                 if not overwrite_dataset:
+                    print("Not overwriting dataset")
                     dataset = concatenate_datasets(
-                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                        [dataset, load_dataset(dataset_repo_id, split="corpus")]
                     )
-            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
+            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus", private=False)
 
         return dataset
