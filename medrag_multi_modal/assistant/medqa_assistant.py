@@ -93,7 +93,7 @@ class MedQAAssistant(weave.Model):
         Args:
             query (str): The medical query to be answered.
             options (Optional[list[str]]): The list of options to choose from.
-            rely_only_on_context (bool): Whether to rely only on the context provided or not.
+            rely_only_on_context (bool): Whether to rely only on the context provided or not during response generation.
 
         Returns:
             str: The generated response to the query, including source information.
