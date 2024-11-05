@@ -44,7 +44,8 @@ def test_google_llm_client():
         system_prompt="Extract the event information",
         user_prompt="Alice and Bob are going to a science fair on Friday.",
         schema=CalendarEvent,
-    )[0]
+    )
+    event = event[0] if isinstance(event, list) else event
     assert event["name"].lower() == "science fair"
     assert event["date"].lower() == "friday"
     assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
@@ -58,5 +59,6 @@ def test_google_image_client():
         system_prompt="Describe the image",
         user_prompt=[Image.open("./assets/test_image.png")],
         schema=CalendarEvent,
-    )[0]
+    )
+    description = description[0] if isinstance(description, list) else description
     assert "astronaut" in description["description"].lower()
