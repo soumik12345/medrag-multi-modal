@@ -164,3 +164,17 @@ jobs:
           pip install -e ".[core, dev]"
           pytest -s tests/retrieval/test_medcpt.py
           deactivate
+  test-llm-client:
+    name: test llm client
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U uv pip
+          uv venv
+          source .venv/bin/activate
+          pip install -e ".[core, dev]"
+          pytest -s tests/assistant/llm_client.py
+          deactivate
