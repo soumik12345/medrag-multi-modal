@@ -105,16 +105,8 @@ class LLMClient(weave.Model):
             response = model.generate_content(user_prompt)
             return response.text
         model = instructor.from_gemini(model, mode=instructor.Mode.GEMINI_JSON)
-        message_contents = []
-        for prompt in user_prompt:
-            if isinstance(prompt, Image.Image):
-                b64_image = base64_encode_image(prompt, "image/png")
-                image = instructor.Image.from_base64(b64_image)
-                message_contents.append(image)
-            else:
-                message_contents.append(prompt)
         return model.chat.completions.create(
-            messages=[{"role": "user", "content": message_contents}],
+            messages=[{"role": "user", "content": user_prompt}],
             response_model=schema,
         )
 
