@@ -24,4 +24,4 @@ class MedQACitation(BaseModel):
 
 class MedQAResponse(BaseModel):
     response: Union[str, MedQAMCQResponse]
-    citations: list[str]
+    citations: list[MedQACitation]
