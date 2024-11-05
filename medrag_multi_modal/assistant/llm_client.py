@@ -151,14 +151,13 @@ class LLMClient(weave.Model):
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
 
-        response = (
-            client.chat.complete(model=self.model_name, messages=messages)
-            if schema is None
-            else client.messages.create(
-                response_model=schema, messages=messages, temperature=0
+        if schema is None:
+            raise NotImplementedError(
+                "Mistral does not support structured output using a schema"
             )
-        )
-        return response.choices[0].message.content
+        else:
+            response = client.chat.complete(model=self.model_name, messages=messages)
+            return response.choices[0].message.content
 
     @weave.op()
     def execute_openai_sdk(

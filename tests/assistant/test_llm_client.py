@@ -36,8 +36,10 @@ def test_openai_image_description():
     assert "astronaut" in description.description.lower()
 
 
-def test_mistral_llm_client():
-    llm_client = LLMClient(model_name="ministral-3b-latest", client_type=ClientType.MISTRAL)
+def test_google_llm_client():
+    llm_client = LLMClient(
+        model_name="gemini-1.5-flash-latest", client_type=ClientType.GOOGLE
+    )
     event = llm_client.predict(
         system_prompt="Extract the event information",
         user_prompt="Alice and Bob are going to a science fair on Friday.",
