@@ -144,7 +144,7 @@ explain your answer to justify why you chose that option.
             system_prompt += "\nYou are supposed to answer the question based on the context provided."
 
         if rely_only_on_context:
-            query += """\n\nYou are only allowed to use the context provided to answer the question.
+            system_prompt += """\n\nYou are only allowed to use the context provided to answer the question.
 You are not allowed to use any external knowledge to answer the question.
 """
 
