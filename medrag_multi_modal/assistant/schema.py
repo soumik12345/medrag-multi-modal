@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Union
 
 
 class FigureAnnotation(BaseModel):
@@ -8,3 +8,18 @@ class FigureAnnotation(BaseModel):
 
 class FigureAnnotations(BaseModel):
     annotations: list[FigureAnnotation]
+
+
+class MedQAMCQResponse(BaseModel):
+    answer: str
+    explanation: str
+
+
+class MedQACitation(BaseModel):
+    page_number: int
+    document_name: str
+
+
+class MedQAResponse(BaseModel):
+    response: Union[str, MedQAMCQResponse]
+    citations: list[str]
