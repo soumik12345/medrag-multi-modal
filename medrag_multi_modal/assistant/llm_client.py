@@ -1,3 +1,4 @@
+import json
 import os
 from enum import Enum
 from typing import Any, Optional, Union
@@ -101,14 +102,17 @@ class LLMClient(weave.Model):
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
         model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
-        if schema is None:
-            response = model.generate_content(user_prompt)
-            return response.text
-        model = instructor.from_gemini(model, mode=instructor.Mode.GEMINI_JSON)
-        return model.chat.completions.create(
-            messages=[{"role": "user", "content": user_prompt}],
-            response_model=schema,
+        generation_config = (
+            None
+            if schema is None
+            else genai.GenerationConfig(
+                response_mime_type="application/json", response_schema=list[schema]
+            )
         )
+        response = model.generate_content(
+            user_prompt, generation_config=generation_config
+        )
+        return response.text if schema is None else json.loads(response.text)
 
     @weave.op()
     def execute_mistral_sdk(
