@@ -24,7 +24,7 @@ def test_pdfplumber_text_loader():
         document_file_path="grays_anatomy.pdf",
     )
     dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
-    assert dataset.num_rows == 5
+    assert dataset.num_rows == 6
     assert dataset.column_names == COLUMN_NAMES
 
 
@@ -35,7 +35,7 @@ def test_pymupdf_text_loader():
         document_file_path="grays_anatomy.pdf",
     )
     dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
-    assert dataset.num_rows == 5
+    assert dataset.num_rows == 6
     assert dataset.column_names == COLUMN_NAMES
 
 
@@ -46,5 +46,5 @@ def test_pypdf2_text_loader():
         document_file_path="grays_anatomy.pdf",
     )
     dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
-    assert dataset.num_rows == 5
+    assert dataset.num_rows == 6
     assert dataset.column_names == COLUMN_NAMES
