@@ -147,10 +147,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - run: |
           pip install -U pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
-          pytest -s tests/assistant/llm_client.py
+          pytest -s tests/assistant/test_llm_client.py
