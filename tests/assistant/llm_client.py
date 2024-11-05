@@ -10,7 +10,7 @@ class CalendarEvent(BaseModel):
 
 
 def test_llm_client():
-    llm_client = LLMClient(client_type=ClientType.OPENAI)
+    llm_client = LLMClient(model_name="gpt-4o-mini", client_type=ClientType.OPENAI)
     event = llm_client.predict(
         system_prompt="Extract the event information",
         user_prompt="Alice and Bob are going to a science fair on Friday.",
