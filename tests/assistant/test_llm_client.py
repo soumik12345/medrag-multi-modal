@@ -38,7 +38,7 @@ def test_openai_image_description():
 
 def test_google_llm_client():
     llm_client = LLMClient(
-        model_name="gemini-1.5-flash-latest", client_type=ClientType.GOOGLE
+        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
     )
     event = llm_client.predict(
         system_prompt="Extract the event information",
