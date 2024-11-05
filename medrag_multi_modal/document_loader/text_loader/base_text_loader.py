@@ -95,6 +95,7 @@ class BaseTextLoader(ABC):
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
+        exclude_pages: Optional[list[int]] = None,
         dataset_repo_id: Optional[str] = None,
         overwrite_dataset: bool = False,
         **kwargs,
@@ -118,6 +119,7 @@ class BaseTextLoader(ABC):
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            exclude_pages (Optional[list[int]]): The list of page indices to exclude from processing.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
             overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
@@ -140,6 +142,7 @@ class BaseTextLoader(ABC):
         pages = []
         processed_pages_counter: int = 1
         total_pages = end_page - start_page
+        exclude_pages = exclude_pages or []
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
@@ -154,7 +157,11 @@ class BaseTextLoader(ABC):
             )
             processed_pages_counter += 1
 
-        tasks = [process_page(page_idx) for page_idx in range(start_page, end_page + 1)]
+        tasks = [
+            process_page(page_idx)
+            for page_idx in range(start_page, end_page + 1)
+            if page_idx not in exclude_pages
+        ]
         for task in asyncio.as_completed(tasks):
             await task
 
