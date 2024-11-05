@@ -1,8 +1,8 @@
 import weave
 
-from ..retrieval import SimilarityMetric
-from .figure_annotation import FigureAnnotatorFromPageImage
-from .llm_client import LLMClient
+from medrag_multi_modal.assistant.figure_annotation import FigureAnnotatorFromPageImage
+from medrag_multi_modal.assistant.llm_client import LLMClient
+from medrag_multi_modal.retrieval.common import SimilarityMetric
 
 
 class MedQAAssistant(weave.Model):

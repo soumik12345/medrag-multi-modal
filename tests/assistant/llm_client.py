@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from medrag_multi_modal.assistant.llm_client import LLMClient, ClientType
+
+from medrag_multi_modal.assistant.llm_client import ClientType, LLMClient
 
 
 class CalendarEvent(BaseModel):
