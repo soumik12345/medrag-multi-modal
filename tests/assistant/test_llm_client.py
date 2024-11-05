@@ -58,7 +58,7 @@ def test_google_image_client():
     description = llm_client.predict(
         system_prompt="Describe the image",
         user_prompt=[Image.open("./assets/test_image.png")],
-        schema=CalendarEvent,
+        schema=ImageDescription,
     )
     description = description[0] if isinstance(description, list) else description
     assert "astronaut" in description["description"].lower()
