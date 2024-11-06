@@ -1,6 +1,6 @@
 import asyncio
-from medrag_multi_modal.document_loader import PDFPlumberTextLoader, PyPDF2TextLoader
 
+from medrag_multi_modal.document_loader import PDFPlumberTextLoader, PyPDF2TextLoader
 
 URL = "https://archive.org/download/GraysAnatomy41E2015PDF/Gray%27s%20Anatomy%2041E%202015.pdf"
 EXCLUDE_PAGES = [
