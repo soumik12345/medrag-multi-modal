@@ -3,7 +3,6 @@ import os
 import shutil
 from typing import Optional, Union
 
-from rich.progress import track
 import huggingface_hub
 import safetensors
 import safetensors.torch
@@ -11,6 +10,7 @@ import torch
 import torch.nn.functional as F
 import weave
 from datasets import Dataset, load_dataset
+from rich.progress import track
 from transformers import (
     AutoModel,
     AutoTokenizer,

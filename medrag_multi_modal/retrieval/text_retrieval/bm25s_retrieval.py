@@ -10,10 +10,7 @@ from bm25s import BM25
 from datasets import Dataset, load_dataset
 from Stemmer import Stemmer
 
-from medrag_multi_modal.utils import (
-    fetch_from_huggingface,
-    save_to_huggingface,
-)
+from medrag_multi_modal.utils import fetch_from_huggingface, save_to_huggingface
 
 LANGUAGE_DICT = {
     "english": "en",
