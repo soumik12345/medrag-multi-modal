@@ -55,15 +55,34 @@ class MedQAAssistant(weave.Model):
         llm_client (LLMClient): The language model client used to generate responses.
         retriever (weave.Model): The model used to retrieve relevant chunks of text from a medical document.
         figure_annotator (FigureAnnotatorFromPageImage): The annotator used to extract figure descriptions from pages.
-        top_k_chunks (int): The number of top chunks to retrieve based on similarity metric.
+        top_k_chunks_for_query (int): The number of top chunks to retrieve based on similarity metric for the query.
+        top_k_chunks_for_options (int): The number of top chunks to retrieve based on similarity metric for the options.
         retrieval_similarity_metric (SimilarityMetric): The metric used to measure similarity for retrieval.
     """
 
     llm_client: LLMClient
     retriever: weave.Model
     figure_annotator: Optional[FigureAnnotatorFromPageImage] = None
-    top_k_chunks: int = 2
+    top_k_chunks_for_query: int = 2
+    top_k_chunks_for_options: int = 2
     retrieval_similarity_metric: SimilarityMetric = SimilarityMetric.COSINE
+
+    @weave.op()
+    def retrieve_chunks_for_query(self, query: str) -> list[dict]:
+        retriever_kwargs = {"top_k": self.top_k_chunks_for_query}
+        if not isinstance(self.retriever, BM25sRetriever):
+            retriever_kwargs["metric"] = self.retrieval_similarity_metric
+        return self.retriever.predict(query, **retriever_kwargs)
+
+    @weave.op()
+    def retrieve_chunks_for_options(self, options: list[str]) -> list[dict]:
+        retriever_kwargs = {"top_k": self.top_k_chunks_for_options}
+        if not isinstance(self.retriever, BM25sRetriever):
+            retriever_kwargs["metric"] = self.retrieval_similarity_metric
+        retrieved_chunks = []
+        for option in options:
+            retrieved_chunks += self.retriever.predict(query=option, **retriever_kwargs)
+        return retrieved_chunks
 
     @weave.op()
     def predict(
@@ -99,14 +118,9 @@ class MedQAAssistant(weave.Model):
         Returns:
             str: The generated response to the query, including source information.
         """
-        retriever_kwargs = {"top_k": self.top_k_chunks}
-        if not isinstance(self.retriever, BM25sRetriever):
-            retriever_kwargs["metric"] = self.retrieval_similarity_metric
-        retrieved_chunks = self.retriever.predict(query, **retriever_kwargs)
-
+        retrieved_chunks = self.retrieve_chunks_for_query(query)
         options = options or []
-        for option in options:
-            retrieved_chunks += self.retriever.predict(query=option, **retriever_kwargs)
+        retrieved_chunks += self.retrieve_chunks_for_options(options)
 
         retrieved_chunk_texts = []
         page_indices = set()
@@ -122,7 +136,7 @@ class MedQAAssistant(weave.Model):
                 ]
                 figure_descriptions += [
                     item["figure_description"] for item in figure_annotations
-            ]
+                ]
 
         system_prompt = """You are an expert in medical science. You are given a question
 and a list of excerpts from various medical documents.

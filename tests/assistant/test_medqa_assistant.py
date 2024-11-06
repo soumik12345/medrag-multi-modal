@@ -13,9 +13,10 @@ def test_medqa_assistant():
     medqa_assistant = MedQAAssistant(
         llm_client=llm_client,
         retriever=retriever,
-        top_k_chunks=10,
+        top_k_chunks_for_query=5,
+        top_k_chunks_for_options=3,
     )
-    options=[
+    options = [
         "The first pharyngeal arch",
         "The first and second pharyngeal arches",
         "The second pharyngeal arch",
