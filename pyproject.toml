@@ -3,6 +3,7 @@ name = "medrag-multi-modal"
 version = "0.0.1"
 description = ""
 readme = "README.md"
+requires-python = ">=3.10"
 dependencies = [
     "bm25s[full]>=0.2.2",
     "datasets>=3.1.0",
