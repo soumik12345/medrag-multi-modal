@@ -65,6 +65,7 @@ class MedQAAssistant(weave.Model):
     figure_annotator: Optional[FigureAnnotatorFromPageImage] = None
     top_k_chunks_for_query: int = 2
     top_k_chunks_for_options: int = 2
+    rely_only_on_context: bool = True
     retrieval_similarity_metric: SimilarityMetric = SimilarityMetric.COSINE
 
     @weave.op()
@@ -85,12 +86,7 @@ class MedQAAssistant(weave.Model):
         return retrieved_chunks
 
     @weave.op()
-    def predict(
-        self,
-        query: str,
-        options: Optional[list[str]] = None,
-        rely_only_on_context: bool = True,
-    ) -> str:
+    def predict(self, query: str, options: Optional[list[str]] = None) -> str:
         """
         Generates a response to a medical query by retrieving relevant text chunks and figure descriptions
         from a medical document and using a language model to generate the final response.
@@ -156,7 +152,7 @@ explain your answer to justify why you chose that option.
         else:
             system_prompt += "\nYou are supposed to answer the question based on the context provided."
 
-        if rely_only_on_context:
+        if self.rely_only_on_context:
             system_prompt += """\n\nYou are only allowed to use the context provided to answer the question.
 You are not allowed to use any external knowledge to answer the question.
 """
