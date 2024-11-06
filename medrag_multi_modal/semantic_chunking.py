@@ -94,8 +94,9 @@ class SemanticChunker:
             if isinstance(document_dataset, str)
             else document_dataset
         ).to_list()
-        
+
         chunks = []
+
         async def process_document(idx, document):
             document_chunks = self.chunker.chunk(str(document["text"]))
             for chunk in document_chunks:
