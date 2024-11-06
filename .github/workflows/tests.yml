@@ -155,3 +155,17 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[core, dev]"
           pytest -s tests/assistant/test_llm_client.py
+  
+  test-medqa-assistant:
+    name: test medqa assistant
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[core, dev]"
+          pytest -s tests/assistant/test_medqa_assistant.py
