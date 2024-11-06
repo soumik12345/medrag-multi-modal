@@ -11,10 +11,11 @@ def test_semantic_chunking():
     assert dataset.num_rows == 120
     assert dataset.column_names == [
         "document_idx",
-        "document_name",
-        "page_idx",
         "text",
+        "page_idx",
+        "document_name",
         "file_path",
         "file_url",
         "loader_name",
+        "source",
     ]
