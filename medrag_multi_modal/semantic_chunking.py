@@ -1,13 +1,12 @@
 from typing import Callable, Optional, Union
 
+import huggingface_hub
 import semchunk
 import tiktoken
 import tokenizers
 from datasets import Dataset, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
-
-from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 TOKENIZER_OR_TOKEN_COUNTER = Union[
     str,
@@ -115,7 +114,7 @@ class SemanticChunker:
 
         dataset = Dataset.from_list(chunks)
         if chunk_dataset_repo_id:
-            if is_existing_huggingface_repo(chunk_dataset_repo_id):
+            if huggingface_hub.repo_exists(chunk_dataset_repo_id, repo_type="dataset"):
                 if not overwrite_dataset:
                     dataset = concatenate_datasets(
                         [dataset, load_dataset(chunk_dataset_repo_id)["chunks"]]

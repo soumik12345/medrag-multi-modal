@@ -3,9 +3,10 @@ import io
 
 import jsonlines
 import torch
-import wandb
 from huggingface_hub import HfApi
 from PIL import Image
+
+import wandb
 
 
 def get_wandb_artifact(
@@ -51,15 +52,6 @@ def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
     with jsonlines.open(file_path) as reader:
         for obj in reader:
             return obj
-
-
-def is_existing_huggingface_repo(repo_id: str) -> bool:
-    api = HfApi()
-    try:
-        repo_url = api.repo_info(repo_id)
-    except Exception:
-        return False
-    return repo_url is not None
 
 
 def save_to_huggingface(

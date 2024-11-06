@@ -4,6 +4,7 @@ import shutil
 from typing import Optional, Union
 
 import bm25s
+import huggingface_hub
 import weave
 from bm25s import BM25
 from datasets import Dataset, load_dataset
@@ -11,7 +12,6 @@ from Stemmer import Stemmer
 
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
-    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -102,7 +102,9 @@ class BM25sRetriever(weave.Model):
                 index_save_dir, corpus=[dict(row) for row in chunk_dataset]
             )
             commit_type = (
-                "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                "update"
+                if huggingface_hub.repo_exists(index_repo_id, repo_type="model")
+                else "add"
             )
             with open(os.path.join(index_save_dir, "config.json"), "w") as config_file:
                 json.dump(

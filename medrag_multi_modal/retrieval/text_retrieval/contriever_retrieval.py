@@ -3,6 +3,7 @@ import os
 import shutil
 from typing import Optional, Union
 
+import huggingface_hub
 import safetensors
 import safetensors.torch
 import torch
@@ -24,7 +25,6 @@ from medrag_multi_modal.retrieval.common import (
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
     get_torch_backend,
-    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -123,7 +123,9 @@ class ContrieverRetriever(weave.Model):
                     os.path.join(index_save_dir, "vector_index.safetensors"),
                 )
                 commit_type = (
-                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                    "update"
+                    if huggingface_hub.repo_exists(index_repo_id, repo_type="model")
+                    else "add"
                 )
                 with open(
                     os.path.join(index_save_dir, "config.json"), "w"
