@@ -171,8 +171,8 @@ class BaseTextLoader(ABC):
 
         pages.sort(key=lambda x: x["page_idx"])
 
+        dataset = Dataset.from_list(pages)
         if dataset_repo_id:
-            dataset = Dataset.from_list(pages)
             if huggingface_hub.repo_exists(dataset_repo_id, repo_type="dataset"):
                 print("Dataset already exists")
                 if not overwrite_dataset:
