@@ -1,13 +1,13 @@
+import asyncio
 from typing import Callable, Optional, Union
 
+import huggingface_hub
 import semchunk
 import tiktoken
 import tokenizers
 from datasets import Dataset, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
-
-from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 TOKENIZER_OR_TOKEN_COUNTER = Union[
     str,
@@ -93,32 +93,42 @@ class SemanticChunker:
             load_dataset(document_dataset, split="corpus")
             if isinstance(document_dataset, str)
             else document_dataset
-        )
+        ).to_list()
+
         chunks = []
-        for idx in track(
-            range(document_dataset.num_rows), description="Chunking documents"
-        ):
-            document = next(iter(document_dataset))
+
+        async def process_document(idx, document):
             document_chunks = self.chunker.chunk(str(document["text"]))
             for chunk in document_chunks:
-                chunks.append(
-                    {
-                        "document_idx": idx,
-                        "document_name": document["document_name"],
-                        "page_idx": document["page_idx"],
-                        "text": chunk,
-                        "file_path": document["file_path"],
-                        "file_url": document["file_url"],
-                        "loader_name": document["loader_name"],
-                    }
-                )
+                chunk_dict = {"document_idx": idx, "text": chunk}
+                for key, value in document.items():
+                    if key not in chunk_dict:
+                        chunk_dict[key] = value
+                chunks.append(chunk_dict)
+
+        async def process_all_documents():
+            tasks = []
+            for idx, document in track(
+                enumerate(document_dataset),
+                total=len(document_dataset),
+                description="Chunking documents",
+            ):
+                tasks.append(process_document(idx, document))
+            await asyncio.gather(*tasks)
+
+        asyncio.run(process_all_documents())
+
+        chunks.sort(key=lambda x: x["document_idx"])
 
         dataset = Dataset.from_list(chunks)
         if chunk_dataset_repo_id:
-            if is_existing_huggingface_repo(chunk_dataset_repo_id):
+            if huggingface_hub.repo_exists(chunk_dataset_repo_id, repo_type="dataset"):
                 if not overwrite_dataset:
                     dataset = concatenate_datasets(
-                        [dataset, load_dataset(chunk_dataset_repo_id)["chunks"]]
+                        [
+                            dataset,
+                            load_dataset(chunk_dataset_repo_id, split="chunks"),
+                        ]
                     )
             dataset.push_to_hub(repo_id=chunk_dataset_repo_id, split="chunks")
 

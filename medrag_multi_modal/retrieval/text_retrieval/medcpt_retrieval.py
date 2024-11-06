@@ -3,12 +3,14 @@ import os
 import shutil
 from typing import Optional, Union
 
+import huggingface_hub
 import safetensors
 import safetensors.torch
 import torch
 import torch.nn.functional as F
 import weave
 from datasets import Dataset, load_dataset
+from rich.progress import track
 from transformers import (
     AutoModel,
     AutoTokenizer,
@@ -20,7 +22,6 @@ from medrag_multi_modal.retrieval.common import SimilarityMetric, argsort_scores
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
     get_torch_backend,
-    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -72,10 +73,10 @@ class MedCPTRetriever(weave.Model):
         )
         self._query_encoder_model = AutoModel.from_pretrained(
             self.query_encoder_model_name
-        )
+        ).to(get_torch_backend())
         self._article_encoder_model = AutoModel.from_pretrained(
             self.article_encoder_model_name
-        )
+        ).to(get_torch_backend())
         self._chunk_dataset = chunk_dataset
         self._vector_index = vector_index
 
@@ -84,6 +85,7 @@ class MedCPTRetriever(weave.Model):
         chunk_dataset: Union[str, Dataset],
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
+        batch_size: int = 32,
     ):
         """
         Indexes a dataset of text chunks using the MedCPT model and optionally saves the vector index.
@@ -113,6 +115,7 @@ class MedCPTRetriever(weave.Model):
                 dataset repository name or a dataset object can be provided.
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
+            batch_size (int, optional): The batch size to use for encoding the corpus.
 
         """
         self._chunk_dataset = (
@@ -121,19 +124,28 @@ class MedCPTRetriever(weave.Model):
             else chunk_dataset
         )
         corpus = [row["text"] for row in self._chunk_dataset]
+        vector_indices = []
         with torch.no_grad():
-            encoded = self._article_tokenizer(
-                corpus,
-                truncation=True,
-                padding=True,
-                return_tensors="pt",
-                max_length=self.chunk_size,
-            )
-            vector_index = (
-                self._article_encoder_model(**encoded)
-                .last_hidden_state[:, 0, :]
-                .contiguous()
-            )
+            for idx in track(
+                range(0, len(corpus), batch_size),
+                description="Encoding corpus using MedCPT",
+            ):
+                batch = corpus[idx : idx + batch_size]
+                encoded = self._article_tokenizer(
+                    batch,
+                    truncation=True,
+                    padding=True,
+                    return_tensors="pt",
+                    max_length=self.chunk_size,
+                ).to(get_torch_backend())
+                batch_vectors = (
+                    self._article_encoder_model(**encoded)
+                    .last_hidden_state[:, 0, :]
+                    .contiguous()
+                )
+                vector_indices.append(batch_vectors)
+
+            vector_index = torch.cat(vector_indices, dim=0)
             self._vector_index = vector_index
             if index_repo_id:
                 index_save_dir = os.path.join(
@@ -145,7 +157,9 @@ class MedCPTRetriever(weave.Model):
                     os.path.join(index_save_dir, "vector_index.safetensors"),
                 )
                 commit_type = (
-                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                    "update"
+                    if huggingface_hub.repo_exists(index_repo_id, repo_type="model")
+                    else "add"
                 )
                 with open(
                     os.path.join(index_save_dir, "config.json"), "w"
@@ -180,17 +194,11 @@ class MedCPTRetriever(weave.Model):
 
         !!! example "Example Usage"
             ```python
-            import weave
-            from dotenv import load_dotenv
-
             from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
-            load_dotenv()
-            weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever()
-            retriever = MedCPTRetriever().from_index(
-                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+            retriever = MedCPTRetriever.from_index(
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
             ```
 
@@ -242,18 +250,14 @@ class MedCPTRetriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from dotenv import load_dotenv
-
             from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
-            load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever()
-            retriever = MedCPTRetriever().from_index(
-                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+            retriever = MedCPTRetriever.from_index(
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
-            retrieved_chunks = retriever.retrieve(query="What are Ribosomes?")
+            retriever.retrieve(query="What is ribosome?")
             ```
 
         Args:
@@ -272,7 +276,7 @@ class MedCPTRetriever(weave.Model):
                 truncation=True,
                 padding=True,
                 return_tensors="pt",
-            )
+            ).to(device)
             query_embedding = self._query_encoder_model(**encoded).last_hidden_state[
                 :, 0, :
             ]
@@ -310,18 +314,14 @@ class MedCPTRetriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from dotenv import load_dotenv
-
             from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
-            load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = MedCPTRetriever()
-            retriever = MedCPTRetriever().from_index(
-                index_repo_id="geekyrakshit/grays-anatomy-index-medcpt",
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
+            retriever = MedCPTRetriever.from_index(
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
-            retrieved_chunks = retriever.predict(query="What are Ribosomes?")
+            retriever.predict(query="What is ribosome?")
             ```
 
         Args:

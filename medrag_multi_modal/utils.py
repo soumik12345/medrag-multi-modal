@@ -54,15 +54,6 @@ def read_jsonl_file(file_path: str) -> list[dict[str, any]]:
             return obj
 
 
-def is_existing_huggingface_repo(repo_id: str) -> bool:
-    api = HfApi()
-    try:
-        repo_url = api.repo_info(repo_id)
-    except Exception:
-        return False
-    return repo_url is not None
-
-
 def save_to_huggingface(
     repo_id: str, local_dir: str, commit_message: str, private: bool = False
 ):

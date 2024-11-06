@@ -3,18 +3,19 @@ import os
 import shutil
 from typing import Optional, Union
 
+import huggingface_hub
 import safetensors
 import torch
 import torch.nn.functional as F
 import weave
 from datasets import Dataset, load_dataset
+from rich.progress import track
 from sentence_transformers import SentenceTransformer
 
 from medrag_multi_modal.retrieval.common import SimilarityMetric, argsort_scores
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
     get_torch_backend,
-    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -41,7 +42,7 @@ class NVEmbed2Retriever(weave.Model):
 
     def __init__(
         self,
-        model_name: str = "sentence-transformers/nvembed2-nli-v1",
+        model_name: str = "nvidia/NV-Embed-v2",
         vector_index: Optional[torch.Tensor] = None,
         chunk_dataset: Optional[list[dict]] = None,
     ):
@@ -69,6 +70,7 @@ class NVEmbed2Retriever(weave.Model):
         chunk_dataset: Union[str, Dataset],
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
+        batch_size: int = 8,
     ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a Huggingface repository.
@@ -80,17 +82,12 @@ class NVEmbed2Retriever(weave.Model):
 
         !!! example "Example Usage"
             ```python
-            import weave
-            from dotenv import load_dotenv
+            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
-            import wandb
-            from medrag_multi_modal.retrieval import NVEmbed2Retriever
-
-            load_dotenv()
-            retriever = NVEmbed2Retriever(model_name="nvidia/NV-Embed-v2")
+            retriever = NVEmbed2Retriever()
             retriever.index(
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
-                index_repo_id="geekyrakshit/grays-anatomy-index-nvembed2",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
             )
             ```
 
@@ -107,6 +104,7 @@ class NVEmbed2Retriever(weave.Model):
                 dataset repository name or a dataset object can be provided.
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
+            batch_size (int, optional): The batch size to use for encoding the corpus.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -114,9 +112,19 @@ class NVEmbed2Retriever(weave.Model):
             else chunk_dataset
         )
         corpus = [row["text"] for row in self._chunk_dataset]
-        self._vector_index = self._model.encode(
-            self.add_eos(corpus), batch_size=len(corpus), normalize_embeddings=True
-        )
+        vector_indices = []
+
+        for idx in track(
+            range(0, len(corpus), batch_size),
+            description="Encoding corpus using NV-Embed-v2",
+        ):
+            batch = corpus[idx : idx + batch_size]
+            batch_embeddings = self._model.encode(
+                self.add_eos(batch), batch_size=len(batch), normalize_embeddings=True
+            )
+            vector_indices.append(torch.tensor(batch_embeddings))
+
+        self._vector_index = torch.cat(vector_indices, dim=0)
         with torch.no_grad():
             if index_repo_id:
                 index_save_dir = os.path.join(
@@ -128,7 +136,9 @@ class NVEmbed2Retriever(weave.Model):
                     os.path.join(index_save_dir, "vector_index.safetensors"),
                 )
                 commit_type = (
-                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                    "update"
+                    if huggingface_hub.repo_exists(index_repo_id, repo_type="model")
+                    else "add"
                 )
                 with open(
                     os.path.join(index_save_dir, "config.json"), "w"
@@ -161,15 +171,11 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from dotenv import load_dotenv
+            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
-            from medrag_multi_modal.retrieval import NVEmbed2Retriever
-
-            load_dotenv()
-            retriever = NVEmbed2Retriever(model_name="nvidia/NV-Embed-v2")
             retriever = NVEmbed2Retriever.from_index(
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
-                index_repo_id="geekyrakshit/grays-anatomy-index-nvembed2",
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
             ```
 
@@ -228,18 +234,14 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from dotenv import load_dotenv
+            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
-            from medrag_multi_modal.retrieval import NVEmbed2Retriever
-
-            load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = NVEmbed2Retriever(model_name="nvidia/NV-Embed-v2")
             retriever = NVEmbed2Retriever.from_index(
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
-                index_repo_id="geekyrakshit/grays-anatomy-index-nvembed2",
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
-            retriever.predict(query="What are Ribosomes?")
+            retriever.retrieve(query="What is ribosome?")
             ```
 
         ??? note "Optional Speedup using Flash Attention"
@@ -297,18 +299,14 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from dotenv import load_dotenv
+            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
-            from medrag_multi_modal.retrieval import NVEmbed2Retriever
-
-            load_dotenv()
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = NVEmbed2Retriever(model_name="nvidia/NV-Embed-v2")
             retriever = NVEmbed2Retriever.from_index(
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
-                index_repo_id="geekyrakshit/grays-anatomy-index-nvembed2",
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
-            retriever.predict(query="What are Ribosomes?")
+            retriever.predict(query="What is ribosome?")
             ```
 
         ??? note "Optional Speedup using Flash Attention"

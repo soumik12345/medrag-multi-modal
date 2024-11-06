@@ -4,6 +4,7 @@ from abc import abstractmethod
 from glob import glob
 from typing import Dict, List, Optional
 
+import huggingface_hub
 import jsonlines
 import rich
 from datasets import (
@@ -19,7 +20,6 @@ from datasets import (
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
 )
-from medrag_multi_modal.utils import is_existing_huggingface_repo
 
 
 class BaseImageLoader(BaseTextLoader):
@@ -88,7 +88,7 @@ class BaseImageLoader(BaseTextLoader):
         dataset = Dataset.from_list(all_examples, features=features)
 
         if dataset_repo_id:
-            if is_existing_huggingface_repo(dataset_repo_id):
+            if huggingface_hub.repo_exists(dataset_repo_id, repo_type="dataset"):
                 if not overwrite_dataset:
                     dataset = concatenate_datasets(
                         [dataset, load_dataset(dataset_repo_id)["corpus"]]

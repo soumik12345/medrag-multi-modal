@@ -5,19 +5,10 @@ from typing import Optional, Union
 import cv2
 import weave
 from PIL import Image
-from pydantic import BaseModel
 
-from ..utils import get_wandb_artifact, read_jsonl_file
-from .llm_client import LLMClient
-
-
-class FigureAnnotation(BaseModel):
-    figure_id: str
-    figure_description: str
-
-
-class FigureAnnotations(BaseModel):
-    annotations: list[FigureAnnotation]
+from medrag_multi_modal.assistant.llm_client import LLMClient
+from medrag_multi_modal.assistant.schema import FigureAnnotations
+from medrag_multi_modal.utils import get_wandb_artifact, read_jsonl_file
 
 
 class FigureAnnotatorFromPageImage(weave.Model):
@@ -108,7 +99,7 @@ Here are some clues you need to follow:
         )
 
     @weave.op()
-    def predict(self, page_idx: int) -> dict[int, list[FigureAnnotation]]:
+    def predict(self, page_idx: int) -> dict[int, list[FigureAnnotations]]:
         """
         Predicts figure annotations for a specific page in a document.
 

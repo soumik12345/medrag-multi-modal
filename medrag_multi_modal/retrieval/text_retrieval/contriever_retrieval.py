@@ -3,12 +3,14 @@ import os
 import shutil
 from typing import Optional, Union
 
+import huggingface_hub
 import safetensors
 import safetensors.torch
 import torch
 import torch.nn.functional as F
 import weave
 from datasets import Dataset, load_dataset
+from rich.progress import track
 from transformers import (
     AutoModel,
     AutoTokenizer,
@@ -24,7 +26,6 @@ from medrag_multi_modal.retrieval.common import (
 from medrag_multi_modal.utils import (
     fetch_from_huggingface,
     get_torch_backend,
-    is_existing_huggingface_repo,
     save_to_huggingface,
 )
 
@@ -57,22 +58,33 @@ class ContrieverRetriever(weave.Model):
     ):
         super().__init__(model_name=model_name)
         self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModel.from_pretrained(self.model_name)
+        self._model = AutoModel.from_pretrained(self.model_name).to(get_torch_backend())
         self._vector_index = vector_index
         self._chunk_dataset = chunk_dataset
 
-    def encode(self, corpus: list[str]) -> torch.Tensor:
-        inputs = self._tokenizer(
-            corpus, padding=True, truncation=True, return_tensors="pt"
-        )
-        outputs = self._model(**inputs)
-        return mean_pooling(outputs[0], inputs["attention_mask"])
+    def encode(self, corpus: list[str], batch_size: int) -> torch.Tensor:
+        embeddings = []
+        for idx in track(
+            range(0, len(corpus), batch_size),
+            description=f"Encoding corpus using {self.model_name}",
+        ):
+            batch = corpus[idx : idx + batch_size]
+            inputs = self._tokenizer(
+                batch, padding=True, truncation=True, return_tensors="pt"
+            ).to(get_torch_backend())
+            with torch.no_grad():
+                outputs = self._model(**inputs)
+                batch_embeddings = mean_pooling(outputs[0], inputs["attention_mask"])
+                embeddings.append(batch_embeddings)
+        embeddings = torch.cat(embeddings, dim=0)
+        return embeddings
 
     def index(
         self,
         chunk_dataset: Union[str, Dataset],
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
+        batch_size: int = 32,
     ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a file.
@@ -85,16 +97,13 @@ class ContrieverRetriever(weave.Model):
 
         !!! example "Example Usage"
             ```python
-            import weave
-            from dotenv import load_dotenv
-
             from medrag_multi_modal.retrieval.text_retrieval import ContrieverRetriever
 
-            load_dotenv()
             retriever = ContrieverRetriever()
             retriever.index(
-                chunk_dataset="geekyrakshit/grays-anatomy-chunks-test",
-                index_repo_id="geekyrakshit/grays-anatomy-index-contriever",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-contriever",
+                batch_size=256,
             )
             ```
 
@@ -103,6 +112,7 @@ class ContrieverRetriever(weave.Model):
                 dataset repository name or a dataset object can be provided.
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
+            batch_size (int, optional): The batch size to use for encoding the corpus.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -111,7 +121,7 @@ class ContrieverRetriever(weave.Model):
         )
         corpus = [row["text"] for row in self._chunk_dataset]
         with torch.no_grad():
-            vector_index = self.encode(corpus)
+            vector_index = self.encode(corpus, batch_size)
             self._vector_index = vector_index
             if index_repo_id:
                 index_save_dir = os.path.join(
@@ -123,7 +133,9 @@ class ContrieverRetriever(weave.Model):
                     os.path.join(index_save_dir, "vector_index.safetensors"),
                 )
                 commit_type = (
-                    "update" if is_existing_huggingface_repo(index_repo_id) else "add"
+                    "update"
+                    if huggingface_hub.repo_exists(index_repo_id, repo_type="model")
+                    else "add"
                 )
                 with open(
                     os.path.join(index_save_dir, "config.json"), "w"
@@ -238,7 +250,7 @@ class ContrieverRetriever(weave.Model):
         query = [query]
         device = torch.device(get_torch_backend())
         with torch.no_grad():
-            query_embedding = self.encode(query).to(device)
+            query_embedding = self.encode(query, batch_size=1).to(device)
             if metric == SimilarityMetric.EUCLIDEAN:
                 scores = torch.squeeze(query_embedding @ self._vector_index.T)
             else:

@@ -1,3 +1,4 @@
+import json
 import os
 from enum import Enum
 from typing import Any, Optional, Union
@@ -100,18 +101,18 @@ class LLMClient(weave.Model):
         user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel(self.model_name)
+        model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
         generation_config = (
             None
             if schema is None
             else genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=list[schema]
+                response_mime_type="application/json", response_schema=schema
             )
         )
         response = model.generate_content(
-            system_prompt + user_prompt, generation_config=generation_config
+            user_prompt, generation_config=generation_config
         )
-        return response.text if schema is None else response
+        return response.text if schema is None else json.loads(response.text)
 
     @weave.op()
     def execute_mistral_sdk(
@@ -146,14 +147,13 @@ class LLMClient(weave.Model):
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
 
-        response = (
-            client.chat.complete(model=self.model_name, messages=messages)
-            if schema is None
-            else client.messages.create(
-                response_model=schema, messages=messages, temperature=0
+        if schema is None:
+            raise NotImplementedError(
+                "Mistral does not support structured output using a schema"
             )
-        )
-        return response.choices[0].message.content
+        else:
+            response = client.chat.complete(model=self.model_name, messages=messages)
+            return response.choices[0].message.content
 
     @weave.op()
     def execute_openai_sdk(

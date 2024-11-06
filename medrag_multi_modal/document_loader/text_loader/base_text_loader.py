@@ -1,14 +1,13 @@
 import asyncio
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
+import huggingface_hub
 import PyPDF2
-import rich
 from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
-
-from medrag_multi_modal.utils import is_existing_huggingface_repo
+from rich.progress import Progress
 
 
 class BaseTextLoader(ABC):
@@ -24,12 +23,20 @@ class BaseTextLoader(ABC):
         url (str): The URL of the PDF file to download if not present locally.
         document_name (str): The name of the document for metadata purposes.
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
+        metadata (Optional[dict[str, any]]): Additional metadata to be added to each row of the dataset.
     """
 
-    def __init__(self, url: str, document_name: str, document_file_path: str):
+    def __init__(
+        self,
+        url: str,
+        document_name: str,
+        document_file_path: str,
+        metadata: Optional[dict[str, Any]] = None,
+    ):
         self.url = url
         self.document_name = document_name
         self.document_file_path = document_file_path
+        self.metadata = metadata or {}
         if not os.path.exists(self.document_file_path):
             FireRequests().download(url, filenames=self.document_file_path)
         with open(self.document_file_path, "rb") as file:
@@ -87,6 +94,7 @@ class BaseTextLoader(ABC):
         self,
         start_page: Optional[int] = None,
         end_page: Optional[int] = None,
+        exclude_pages: Optional[list[int]] = None,
         dataset_repo_id: Optional[str] = None,
         overwrite_dataset: bool = False,
         **kwargs,
@@ -110,6 +118,7 @@ class BaseTextLoader(ABC):
         Args:
             start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
             end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            exclude_pages (Optional[list[int]]): The list of page indices to exclude from processing.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
             overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
@@ -132,28 +141,45 @@ class BaseTextLoader(ABC):
         pages = []
         processed_pages_counter: int = 1
         total_pages = end_page - start_page
+        exclude_pages = exclude_pages or []
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
             page_data = await self.extract_page_data(page_idx, **kwargs)
             page_data["loader_name"] = self.__class__.__name__
+            for key, value in self.metadata.items():
+                if key not in page_data:
+                    page_data[key] = value
             pages.append(page_data)
-            rich.print(
-                f"Processed page idx: {page_idx}, progress: {processed_pages_counter}/{total_pages}"
+            progress.update(
+                task_id,
+                advance=1,
+                description=f"Loading page {page_idx} using {self.__class__.__name__}",
             )
             processed_pages_counter += 1
 
-        tasks = [process_page(page_idx) for page_idx in range(start_page, end_page)]
-        for task in asyncio.as_completed(tasks):
-            await task
+        progress = Progress()
+        with progress:
+            task_id = progress.add_task("Starting...", total=total_pages)
+            tasks = [
+                process_page(page_idx)
+                for page_idx in range(start_page, end_page + 1)
+                if page_idx not in exclude_pages
+            ]
+            for task in asyncio.as_completed(tasks):
+                await task
+
+        pages.sort(key=lambda x: x["page_idx"])
 
         dataset = Dataset.from_list(pages)
         if dataset_repo_id:
-            if is_existing_huggingface_repo(dataset_repo_id):
+            if huggingface_hub.repo_exists(dataset_repo_id, repo_type="dataset"):
+                print("Dataset already exists")
                 if not overwrite_dataset:
+                    print("Not overwriting dataset")
                     dataset = concatenate_datasets(
-                        [dataset, load_dataset(dataset_repo_id)["corpus"]]
+                        [dataset, load_dataset(dataset_repo_id, split="corpus")]
                     )
-            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus")
+            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus", private=False)
 
         return dataset
