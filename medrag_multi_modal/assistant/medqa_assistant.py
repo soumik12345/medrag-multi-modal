@@ -10,6 +10,7 @@ from medrag_multi_modal.assistant.schema import (
     MedQAResponse,
 )
 from medrag_multi_modal.retrieval.common import SimilarityMetric
+from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
 
 class MedQAAssistant(weave.Model):
@@ -60,7 +61,7 @@ class MedQAAssistant(weave.Model):
 
     llm_client: LLMClient
     retriever: weave.Model
-    figure_annotator: FigureAnnotatorFromPageImage
+    figure_annotator: Optional[FigureAnnotatorFromPageImage] = None
     top_k_chunks: int = 2
     retrieval_similarity_metric: SimilarityMetric = SimilarityMetric.COSINE
 
@@ -98,17 +99,14 @@ class MedQAAssistant(weave.Model):
         Returns:
             str: The generated response to the query, including source information.
         """
-        retrieved_chunks = self.retriever.predict(
-            query, top_k=self.top_k_chunks, metric=self.retrieval_similarity_metric
-        )
+        retriever_kwargs = {"top_k": self.top_k_chunks}
+        if not isinstance(self.retriever, BM25sRetriever):
+            retriever_kwargs["metric"] = self.retrieval_similarity_metric
+        retrieved_chunks = self.retriever.predict(query, **retriever_kwargs)
 
         options = options or []
         for option in options:
-            retrieved_chunks += self.retriever.predict(
-                query=option,
-                top_k=self.top_k_chunks,
-                metric=self.retrieval_similarity_metric,
-            )
+            retrieved_chunks += self.retriever.predict(query=option, **retriever_kwargs)
 
         retrieved_chunk_texts = []
         page_indices = set()
@@ -117,12 +115,13 @@ class MedQAAssistant(weave.Model):
             page_indices.add(int(chunk["page_idx"]))
 
         figure_descriptions = []
-        for page_idx in page_indices:
-            figure_annotations = self.figure_annotator.predict(page_idx=page_idx)[
-                page_idx
-            ]
-            figure_descriptions += [
-                item["figure_description"] for item in figure_annotations
+        if self.figure_annotator is not None:
+            for page_idx in page_indices:
+                figure_annotations = self.figure_annotator.predict(page_idx=page_idx)[
+                    page_idx
+                ]
+                figure_descriptions += [
+                    item["figure_description"] for item in figure_annotations
             ]
 
         system_prompt = """You are an expert in medical science. You are given a question

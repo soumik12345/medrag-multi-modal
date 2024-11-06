@@ -106,7 +106,7 @@ class LLMClient(weave.Model):
             None
             if schema is None
             else genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=list[schema]
+                response_mime_type="application/json", response_schema=schema
             )
         )
         response = model.generate_content(
