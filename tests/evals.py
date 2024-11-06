@@ -19,7 +19,7 @@ def test_mmlu_correctness_anatomy():
         top_k_chunks_for_query=5,
         top_k_chunks_for_options=3,
     )
-    dataset = weave.ref("mmlu-anatomy-test:v2").get().rows[:5]
+    dataset = weave.ref("mmlu-anatomy-test:v2").get()
     evaluation = weave.Evaluation(dataset=dataset, scorers=[MMLUOptionAccuracy()])
     summary = asyncio.run(evaluation.evaluate(medqa_assistant))
     assert (
