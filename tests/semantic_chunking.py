@@ -13,5 +13,4 @@ def test_semantic_chunking():
         "file_path",
         "file_url",
         "loader_name",
-        "source",
     ]
