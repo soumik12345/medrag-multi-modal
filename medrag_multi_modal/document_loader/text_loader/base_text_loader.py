@@ -152,7 +152,9 @@ class BaseTextLoader(ABC):
                     page_data[key] = value
             pages.append(page_data)
             progress.update(
-                task_id, advance=1, description=f"Loading page {page_idx}"
+                task_id,
+                advance=1,
+                description=f"Loading page {page_idx} using {self.__class__.__name__}",
             )
             processed_pages_counter += 1
 
