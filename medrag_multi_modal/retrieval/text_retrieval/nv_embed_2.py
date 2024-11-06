@@ -3,6 +3,7 @@ import os
 import shutil
 from typing import Optional, Union
 
+from rich.progress import track
 import huggingface_hub
 import safetensors
 import torch
@@ -41,7 +42,7 @@ class NVEmbed2Retriever(weave.Model):
 
     def __init__(
         self,
-        model_name: str = "sentence-transformers/nvembed2-nli-v1",
+        model_name: str = "nvidia/NV-Embed-v2",
         vector_index: Optional[torch.Tensor] = None,
         chunk_dataset: Optional[list[dict]] = None,
     ):
@@ -69,6 +70,7 @@ class NVEmbed2Retriever(weave.Model):
         chunk_dataset: Union[str, Dataset],
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
+        batch_size: int = 8,
     ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a Huggingface repository.
@@ -107,6 +109,7 @@ class NVEmbed2Retriever(weave.Model):
                 dataset repository name or a dataset object can be provided.
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
+            batch_size (int, optional): The batch size to use for encoding the corpus.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -114,9 +117,20 @@ class NVEmbed2Retriever(weave.Model):
             else chunk_dataset
         )
         corpus = [row["text"] for row in self._chunk_dataset]
-        self._vector_index = self._model.encode(
-            self.add_eos(corpus), batch_size=len(corpus), normalize_embeddings=True
-        )
+        vector_indices = []
+
+        for idx in track(
+            range(0, len(corpus), batch_size), description="Encoding corpus using NV-Embed-v2"
+        ):
+            batch = corpus[idx : idx + batch_size]
+            batch_embeddings = self._model.encode(
+                self.add_eos(batch), 
+                batch_size=len(batch),
+                normalize_embeddings=True
+            )
+            vector_indices.append(torch.tensor(batch_embeddings))
+            
+        self._vector_index = torch.cat(vector_indices, dim=0)
         with torch.no_grad():
             if index_repo_id:
                 index_save_dir = os.path.join(
