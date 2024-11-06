@@ -33,7 +33,7 @@ loader = PDFPlumberTextLoader(
 asyncio.run(
     loader.load_data(
         start_page=20,
-        end_page=225,
+        end_page=2250,
         exclude_pages=EXCLUDE_PAGES,
         dataset_repo_id="ashwiniai/medrag-text-corpus",
         overwrite_dataset=True,
@@ -49,7 +49,7 @@ loader = PyPDF2TextLoader(
 asyncio.run(
     loader.load_data(
         start_page=20,
-        end_page=225,
+        end_page=2250,
         exclude_pages=EXCLUDE_PAGES,
         dataset_repo_id="ashwiniai/medrag-text-corpus",
     )
