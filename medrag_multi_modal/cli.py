@@ -18,7 +18,7 @@ def main():
     eval_parser = subparsers.add_parser("evaluate", help="Run evaluation tests")
     eval_parser.add_argument(
         "--test-file",
-        default=os.path.join("tests", "evals.py"),
+        default=os.path.join("tests", "evals", "test_assistant_mmlu_anatomy.py"),
         help="Path to test file",
     )
     eval_parser.add_argument(
