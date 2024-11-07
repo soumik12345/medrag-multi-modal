@@ -91,5 +91,10 @@ nav:
       - MedQA Assistant: 'rag/assistant/medqa_assistant.md'
       - Figure Annotation: 'rag/assistant/figure_annotation.md'
       - LLM Client: 'rag/assistant/llm_client.md'
+    - Eval:
+      - Eval: 'rag/evals/eval.md'
+      - Metrics:
+        - Base: 'rag/evals/metrics/base.md'
+        - MMLU: 'rag/evals/metrics/mmlu.md'
 
 repo_url: https://github.com/soumik12345/medrag-multi-modal
