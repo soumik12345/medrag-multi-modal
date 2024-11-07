@@ -25,7 +25,6 @@ def test_medqa_assistant():
     response = medqa_assistant.predict(
         query="What is the embryological origin of the hyoid bone?",
         options=options,
-        rely_only_on_context=True,
     )
     assert response.response.answer in options
     assert response.response.answer.lower() == options[2].lower()

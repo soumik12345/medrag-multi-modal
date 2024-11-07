@@ -86,7 +86,7 @@ class MedQAAssistant(weave.Model):
         return retrieved_chunks
 
     @weave.op()
-    def predict(self, query: str, options: Optional[list[str]] = None) -> str:
+    def predict(self, query: str, options: Optional[list[str]] = None) -> MedQAResponse:
         """
         Generates a response to a medical query by retrieving relevant text chunks and figure descriptions
         from a medical document and using a language model to generate the final response.
@@ -112,7 +112,7 @@ class MedQAAssistant(weave.Model):
             rely_only_on_context (bool): Whether to rely only on the context provided or not during response generation.
 
         Returns:
-            str: The generated response to the query, including source information.
+            MedQAResponse: The generated response to the query, including source information.
         """
         retrieved_chunks = self.retrieve_chunks_for_query(query)
         options = options or []
