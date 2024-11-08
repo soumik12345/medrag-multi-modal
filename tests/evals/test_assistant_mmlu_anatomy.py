@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 import weave
 
 from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
@@ -12,12 +13,13 @@ from medrag_multi_modal.retrieval.text_retrieval import (
 )
 
 
-def test_mmlu_correctness_anatomy_bm25s():
+@pytest.mark.parametrize("model_name", ["gemini-1.5-flash"])
+def test_mmlu_correctness_anatomy_bm25s(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = BM25sRetriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-bm25s"
     )
-    llm_client = LLMClient(model_name="gemini-1.5-flash")
+    llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
         llm_client=llm_client,
         retriever=retriever,
@@ -45,12 +47,13 @@ def test_mmlu_correctness_anatomy_bm25s():
     )
 
 
-def test_mmlu_correctness_anatomy_contriever():
+@pytest.mark.parametrize("model_name", ["gemini-1.5-flash"])
+def test_mmlu_correctness_anatomy_contriever(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = ContrieverRetriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-contriever"
     )
-    llm_client = LLMClient(model_name="gemini-1.5-flash")
+    llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
         llm_client=llm_client,
         retriever=retriever,
@@ -78,12 +81,13 @@ def test_mmlu_correctness_anatomy_contriever():
     )
 
 
-def test_mmlu_correctness_anatomy_medcpt():
+@pytest.mark.parametrize("model_name", ["gemini-1.5-flash"])
+def test_mmlu_correctness_anatomy_medcpt(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = MedCPTRetriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt"
     )
-    llm_client = LLMClient(model_name="gemini-1.5-flash")
+    llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
         llm_client=llm_client,
         retriever=retriever,
@@ -111,12 +115,13 @@ def test_mmlu_correctness_anatomy_medcpt():
     )
 
 
-def test_mmlu_correctness_anatomy_nvembed2():
+@pytest.mark.parametrize("model_name", ["gemini-1.5-flash"])
+def test_mmlu_correctness_anatomy_nvembed2(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = NVEmbed2Retriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-nvembed2"
     )
-    llm_client = LLMClient(model_name="gemini-1.5-flash")
+    llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
         llm_client=llm_client,
         retriever=retriever,
