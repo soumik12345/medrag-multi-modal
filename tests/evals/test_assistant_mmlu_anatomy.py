@@ -25,8 +25,20 @@ def test_mmlu_correctness_anatomy_bm25s():
         top_k_chunks_for_options=3,
     )
     dataset = weave.ref("mmlu-anatomy-test:v2").get()
-    evaluation = weave.Evaluation(dataset=dataset, scorers=[MMLUOptionAccuracy()])
-    summary = asyncio.run(evaluation.evaluate(medqa_assistant))
+    with weave.attributes(
+        {"retriever": retriever.__class__.__name__, "llm": llm_client.model_name}
+    ):
+        evaluation = weave.Evaluation(
+            dataset=dataset,
+            scorers=[MMLUOptionAccuracy()],
+            name="MMLU-Anatomy-BM25s",
+        )
+        summary = asyncio.run(
+            evaluation.evaluate(
+                medqa_assistant,
+                __weave={"display_name": evaluation.name + ":" + llm_client.model_name},
+            )
+        )
     assert (
         summary["MMLUOptionAccuracy"]["correct"]["true_count"]
         > summary["MMLUOptionAccuracy"]["correct"]["false_count"]
@@ -46,8 +58,20 @@ def test_mmlu_correctness_anatomy_contriever():
         top_k_chunks_for_options=3,
     )
     dataset = weave.ref("mmlu-anatomy-test:v2").get()
-    evaluation = weave.Evaluation(dataset=dataset, scorers=[MMLUOptionAccuracy()])
-    summary = asyncio.run(evaluation.evaluate(medqa_assistant))
+    with weave.attributes(
+        {"retriever": retriever.__class__.__name__, "llm": llm_client.model_name}
+    ):
+        evaluation = weave.Evaluation(
+            dataset=dataset,
+            scorers=[MMLUOptionAccuracy()],
+            name="MMLU-Anatomy-Contriever",
+        )
+        summary = asyncio.run(
+            evaluation.evaluate(
+                medqa_assistant,
+                __weave={"display_name": evaluation.name + ":" + llm_client.model_name},
+            )
+        )
     assert (
         summary["MMLUOptionAccuracy"]["correct"]["true_count"]
         > summary["MMLUOptionAccuracy"]["correct"]["false_count"]
@@ -67,8 +91,20 @@ def test_mmlu_correctness_anatomy_medcpt():
         top_k_chunks_for_options=3,
     )
     dataset = weave.ref("mmlu-anatomy-test:v2").get()
-    evaluation = weave.Evaluation(dataset=dataset, scorers=[MMLUOptionAccuracy()])
-    summary = asyncio.run(evaluation.evaluate(medqa_assistant))
+    with weave.attributes(
+        {"retriever": retriever.__class__.__name__, "llm": llm_client.model_name}
+    ):
+        evaluation = weave.Evaluation(
+            dataset=dataset,
+            scorers=[MMLUOptionAccuracy()],
+            name="MMLU-Anatomy-MedCPT",
+        )
+        summary = asyncio.run(
+            evaluation.evaluate(
+                medqa_assistant,
+                __weave={"display_name": evaluation.name + ":" + llm_client.model_name},
+            )
+        )
     assert (
         summary["MMLUOptionAccuracy"]["correct"]["true_count"]
         > summary["MMLUOptionAccuracy"]["correct"]["false_count"]
@@ -88,8 +124,20 @@ def test_mmlu_correctness_anatomy_nvembed2():
         top_k_chunks_for_options=3,
     )
     dataset = weave.ref("mmlu-anatomy-test:v2").get()
-    evaluation = weave.Evaluation(dataset=dataset, scorers=[MMLUOptionAccuracy()])
-    summary = asyncio.run(evaluation.evaluate(medqa_assistant))
+    with weave.attributes(
+        {"retriever": retriever.__class__.__name__, "llm": llm_client.model_name}
+    ):
+        evaluation = weave.Evaluation(
+            dataset=dataset,
+            scorers=[MMLUOptionAccuracy()],
+            name="MMLU-Anatomy-NVEmbed2",
+        )
+        summary = asyncio.run(
+            evaluation.evaluate(
+                medqa_assistant,
+                __weave={"display_name": evaluation.name + ":" + llm_client.model_name},
+            )
+        )
     assert (
         summary["MMLUOptionAccuracy"]["correct"]["true_count"]
         > summary["MMLUOptionAccuracy"]["correct"]["false_count"]
