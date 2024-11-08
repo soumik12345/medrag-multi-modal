@@ -29,6 +29,7 @@ def main():
     eval_parser.add_argument(
         "--model-name",
         type=str,
+        default="gemini-1.5-flash",
         help="Model name to use for evaluation",
     )
 
