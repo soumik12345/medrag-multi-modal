@@ -64,10 +64,11 @@ class ContrieverRetriever(weave.Model):
 
     def encode(self, corpus: list[str], batch_size: int) -> torch.Tensor:
         embeddings = []
-        for idx in track(
+        iterable = track(
             range(0, len(corpus), batch_size),
             description=f"Encoding corpus using {self.model_name}",
-        ):
+        ) if batch_size > 1 else range(0, len(corpus), batch_size)
+        for idx in iterable:
             batch = corpus[idx : idx + batch_size]
             inputs = self._tokenizer(
                 batch, padding=True, truncation=True, return_tensors="pt"
