@@ -116,7 +116,7 @@ def test_mmlu_correctness_anatomy_medcpt(model_name: str):
 def test_mmlu_correctness_anatomy_nvembed2(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = NVEmbed2Retriever().from_index(
-        index_repo_id="ashwiniai/medrag-text-corpus-chunks-nvembed2",
+        index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
         chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
     )
     llm_client = LLMClient(model_name=model_name)
