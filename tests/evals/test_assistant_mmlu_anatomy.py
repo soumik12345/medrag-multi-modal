@@ -49,7 +49,7 @@ def test_mmlu_correctness_anatomy_contriever(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = ContrieverRetriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-contriever",
-        chunk_dataset_name="ashwiniai/medrag-text-corpus-chunks",
+        chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
     )
     llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
@@ -83,7 +83,7 @@ def test_mmlu_correctness_anatomy_medcpt(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = MedCPTRetriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt",
-        chunk_dataset_name="ashwiniai/medrag-text-corpus-chunks",
+        chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
     )
     llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
@@ -117,7 +117,7 @@ def test_mmlu_correctness_anatomy_nvembed2(model_name: str):
     weave.init("ml-colabs/medrag-multi-modal")
     retriever = NVEmbed2Retriever().from_index(
         index_repo_id="ashwiniai/medrag-text-corpus-chunks-nvembed2",
-        chunk_dataset_name="ashwiniai/medrag-text-corpus-chunks",
+        chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
     )
     llm_client = LLMClient(model_name=model_name)
     medqa_assistant = MedQAAssistant(
