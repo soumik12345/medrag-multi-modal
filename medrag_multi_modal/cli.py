@@ -58,8 +58,8 @@ def main():
             "pytest",
             "-s",
             test_file,
-            "--model-name",
-            args.model_name,
+            "-v",
+            f"--model-name={args.model_name}",
         ]
         subprocess.run(cmd)
 
