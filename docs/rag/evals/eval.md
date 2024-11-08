@@ -14,4 +14,6 @@ options:
                         Path to test file
   --test-case TEST_CASE
                         Only run tests which match the given substring expression
+  --model-name MODEL_NAME
+                        Model name to use for evaluation
 ```

@@ -26,6 +26,12 @@ def main():
         type=str,
         help="Only run tests which match the given substring expression",
     )
+    eval_parser.add_argument(
+        "--model-name",
+        type=str,
+        default="gemini-1.5-flash",
+        help="Model name to use for evaluation",
+    )
 
     args = parser.parse_args()
 
@@ -46,7 +52,15 @@ def main():
         test_file = (
             args.test_file + "::" + args.test_case if args.test_case else args.test_file
         )
-        cmd = [sys.executable, "-m", "pytest", "-s", test_file]
+        cmd = [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-s",
+            test_file,
+            "-v",
+            f"--model-name={args.model_name}",
+        ]
         subprocess.run(cmd)
 
 

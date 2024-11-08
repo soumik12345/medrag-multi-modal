@@ -94,6 +94,7 @@ class LLMClient(weave.Model):
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
         import google.generativeai as genai
+        from google.generativeai.types import HarmBlockThreshold, HarmCategory
 
         system_prompt = (
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
@@ -110,7 +111,14 @@ class LLMClient(weave.Model):
             )
         )
         response = model.generate_content(
-            user_prompt, generation_config=generation_config
+            user_prompt,
+            generation_config=generation_config,
+            # This is necessary in order to answer questions about anatomy, sexual diseases,
+            # medical devices, medicines, etc.
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            },
         )
         return response.text if schema is None else json.loads(response.text)
 
