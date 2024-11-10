@@ -1,6 +1,7 @@
 import asyncio
 
 from medrag_multi_modal.document_loader import (
+    DoclingTextLoader,
     PDFPlumberTextLoader,
     PyMuPDF4LLMTextLoader,
     PyPDF2TextLoader,
@@ -44,6 +45,18 @@ def test_pypdf2_text_loader():
         url=URL,
         document_name="Gray's Anatomy",
         document_file_path="grays_anatomy.pdf",
+    )
+    dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
+    assert dataset.num_rows == 6
+    assert dataset.column_names == COLUMN_NAMES
+
+
+def test_docling_text_loader():
+    loader = DoclingTextLoader(
+        url=URL,
+        document_name="Gray's Anatomy",
+        document_file_path="grays_anatomy.pdf",
+        image_save_dir="./images",
     )
     dataset = asyncio.run(loader.load_data(start_page=31, end_page=36))
     assert dataset.num_rows == 6

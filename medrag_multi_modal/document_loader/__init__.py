@@ -6,6 +6,7 @@ from .image_loader import (
     PyMuPDFImageLoader,
 )
 from .text_loader import (
+    DoclingTextLoader,
     MarkerTextLoader,
     PDFPlumberTextLoader,
     PyMuPDF4LLMTextLoader,
@@ -13,6 +14,7 @@ from .text_loader import (
 )
 
 __all__ = [
+    "DoclingTextLoader",
     "PyMuPDF4LLMTextLoader",
     "PyPDF2TextLoader",
     "PDFPlumberTextLoader",
