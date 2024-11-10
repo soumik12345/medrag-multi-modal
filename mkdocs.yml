@@ -68,6 +68,7 @@ nav:
     - Document Loader:
       - Text Loader:
         - Base: 'rag/document_loader/text_loader/base_text_loader.md'
+        - Docling: 'rag/document_loader/text_loader/docling_text_loader.md'
         - PyMuPDF4LLM: 'rag/document_loader/text_loader/pymupdf4llm_text_loader.md'
         - PyPDF2: 'rag/document_loader/text_loader/pypdf2_text_loader.md'
         - PDFPlumber: 'rag/document_loader/text_loader/pdfplumber_text_loader.md'

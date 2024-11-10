@@ -62,6 +62,26 @@ class DoclingTextLoader(BaseTextLoader):
         self.converter = DocumentConverter()
 
     async def extract_page_data(self, page_idx: int, **kwargs) -> dict[str, str]:
+        """
+        Extracts text data from a specific page of the PDF document.
+
+        This function converts a specified page of the PDF document into an image using the
+        `pdf2image` library. The image is then saved to the `image_save_dir` directory. The
+        saved image is processed using the `DocumentConverter` from the docling library to
+        extract text, which is then exported in markdown format.
+
+        Args:
+            page_idx (int): The index of the page to be processed (0-based index).
+            **kwargs: Additional keyword arguments to be passed to the `convert_from_path` function.
+
+        Returns:
+            dict[str, str]: A dictionary containing the extracted text and metadata about the page.
+                - "text": The extracted text in markdown format.
+                - "page_idx": The index of the processed page.
+                - "document_name": The name of the document.
+                - "file_path": The path to the PDF file.
+                - "file_url": The URL of the PDF document.
+        """
         image = convert_from_path(
             self.document_file_path,
             first_page=page_idx + 1,
@@ -93,6 +113,26 @@ class DoclingTextLoader(BaseTextLoader):
         cleanup: bool = True,
         **kwargs,
     ) -> Dataset:
+        """
+        Loads data from the PDF document and optionally cleans up the image save directory.
+
+        This function extends the `load_data` method from the superclass to load data from the
+        PDF document. It allows specifying a range of pages to load, excluding certain pages,
+        and handling dataset repository details. After loading the data, it optionally cleans
+        up the image save directory by removing it.
+
+        Args:
+            start_page (Optional[int]): The starting page index to load (0-based index).
+            end_page (Optional[int]): The ending page index to load (0-based index).
+            exclude_pages (Optional[list[int]]): A list of page indices to exclude from loading.
+            dataset_repo_id (Optional[str]): The repository ID for the dataset.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset.
+            cleanup (bool): Whether to clean up the image save directory after loading data.
+            **kwargs: Additional keyword arguments to be passed to the superclass `load_data` method.
+
+        Returns:
+            Dataset: The loaded dataset containing the extracted data from the PDF document.
+        """
         dataset = await super().load_data(
             start_page,
             end_page,
