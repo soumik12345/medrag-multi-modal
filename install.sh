@@ -1,6 +1,7 @@
 #!/bin/bash
 
 OS_TYPE=$(uname -s)
+export PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
 
 if [ "$OS_TYPE" = "Darwin" ]; then
     echo "Detected macOS."
@@ -27,4 +28,10 @@ fi
 
 git clone https://github.com/soumik12345/medrag-multi-modal
 cd medrag-multi-modal
-pip install -U .[core]
+pip install -U pip uv
+uv pip install .
+
+if [[ "$1" == "--flash-attention" ]]; then
+    echo "Installing flash-attn with no build isolation."
+    pip install flash-attn --no-build-isolation
+fi
