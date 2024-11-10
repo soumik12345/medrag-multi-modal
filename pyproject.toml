@@ -51,9 +51,6 @@ docs = [
     "mkdocs-jupyter>=0.25.0",
     "jupyter>=1.1.1",
 ]
-torch = [
-    "torch>=2.5.1",
-]
 
 [project.scripts]
 medrag = "medrag_multi_modal.cli:main"
