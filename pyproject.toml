@@ -27,7 +27,6 @@ dependencies = [
     "instructor>=1.6.3",
     "opencv-python>=4.10.0.84",
     "openai>=1.52.2",
-    "torch>=2.5.1",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +50,9 @@ docs = [
     "mkdocs-glightbox>=0.4.0",
     "mkdocs-jupyter>=0.25.0",
     "jupyter>=1.1.1",
+]
+torch = [
+    "torch>=2.5.1",
 ]
 
 [project.scripts]

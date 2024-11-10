@@ -29,7 +29,9 @@ fi
 git clone https://github.com/soumik12345/medrag-multi-modal
 cd medrag-multi-modal
 pip install -U pip uv
-uv pip install .
+uv pip install ".[torch]"
+
+source .venv/bin/activate
 
 if [[ "$1" == "--flash-attention" ]]; then
     echo "Installing flash-attn with no build isolation."
