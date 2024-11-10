@@ -43,6 +43,16 @@ jobs:
           pip install -e ".[dev]"
           pytest -s tests/document_loader/text_loader.py::test_pypdf2_text_loader
           
+  test-text-loader-docling:
+    name: test text loader (docling)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          pip install -U pip
+          pip install -e ".[dev]"
+          pytest -s tests/document_loader/text_loader.py::test_docling_text_loader
+          
   test-image-loader-fitzpil:
     name: test image loader (fitzpil)
     runs-on: ubuntu-latest
