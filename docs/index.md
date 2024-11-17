@@ -43,5 +43,11 @@ We also provide an experimental shell script to install the dependencies and the
 ```bash
 git clone https://github.com/soumik12345/medrag-multi-modal
 cd medrag-multi-modal
-sh install.sh # Add --flash-attention to install flash-attn with no build isolation.
+sh install.sh
+```
+
+To install flash-attn with no build isolation, add the flag as follows:
+
+```bash
+sh install.sh --flash-attention
 ```
