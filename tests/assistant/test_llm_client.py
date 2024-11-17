@@ -1,3 +1,4 @@
+import pytest
 from PIL import Image
 from pydantic import BaseModel
 
@@ -14,6 +15,7 @@ class ImageDescription(BaseModel):
     description: str
 
 
+@pytest.mark.retry(max_attempts=5)
 def test_openai_llm_client():
     llm_client = LLMClient(model_name="gpt-4o-mini", client_type=ClientType.OPENAI)
     event = llm_client.predict(
@@ -26,6 +28,7 @@ def test_openai_llm_client():
     assert [item.lower() for item in event.participants] == ["alice", "bob"]
 
 
+@pytest.mark.retry(max_attempts=5)
 def test_openai_image_description():
     llm_client = LLMClient(model_name="gpt-4o-mini", client_type=ClientType.OPENAI)
     description = llm_client.predict(
@@ -36,6 +39,7 @@ def test_openai_image_description():
     assert "astronaut" in description.description.lower()
 
 
+@pytest.mark.retry(max_attempts=5)
 def test_google_llm_client():
     llm_client = LLMClient(
         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
@@ -51,6 +55,7 @@ def test_google_llm_client():
     assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
 
 
+@pytest.mark.retry(max_attempts=5)
 def test_google_image_client():
     llm_client = LLMClient(
         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
