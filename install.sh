@@ -1,7 +1,10 @@
 #!/bin/bash
 
 OS_TYPE=$(uname -s)
-export PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
+
+if [[ "$1" != "--flash-attention" ]]; then
+    export PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu
+fi
 
 if [ "$OS_TYPE" = "Darwin" ]; then
     echo "Detected macOS."
