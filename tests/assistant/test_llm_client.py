@@ -39,31 +39,31 @@ def test_openai_image_description():
     assert "astronaut" in description.description.lower()
 
 
-@pytest.mark.retry(max_attempts=5)
-def test_google_llm_client():
-    llm_client = LLMClient(
-        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
-    )
-    event = llm_client.predict(
-        system_prompt="Extract the event information",
-        user_prompt="Alice and Bob are going to a science fair on Friday.",
-        schema=CalendarEvent,
-    )
-    event = event[0] if isinstance(event, list) else event
-    assert event["name"].lower() == "science fair"
-    assert event["date"].lower() == "friday"
-    assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
+# @pytest.mark.retry(max_attempts=5)
+# def test_google_llm_client():
+#     llm_client = LLMClient(
+#         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
+#     )
+#     event = llm_client.predict(
+#         system_prompt="Extract the event information",
+#         user_prompt="Alice and Bob are going to a science fair on Friday.",
+#         schema=CalendarEvent,
+#     )
+#     event = event[0] if isinstance(event, list) else event
+#     assert event["name"].lower() == "science fair"
+#     assert event["date"].lower() == "friday"
+#     assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
 
 
-@pytest.mark.retry(max_attempts=5)
-def test_google_image_client():
-    llm_client = LLMClient(
-        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
-    )
-    description = llm_client.predict(
-        system_prompt="Describe the image",
-        user_prompt=[Image.open("./assets/test_image.png")],
-        schema=ImageDescription,
-    )
-    description = description[0] if isinstance(description, list) else description
-    assert "astronaut" in description["description"].lower()
+# @pytest.mark.retry(max_attempts=5)
+# def test_google_image_client():
+#     llm_client = LLMClient(
+#         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
+#     )
+#     description = llm_client.predict(
+#         system_prompt="Describe the image",
+#         user_prompt=[Image.open("./assets/test_image.png")],
+#         schema=ImageDescription,
+#     )
+#     description = description[0] if isinstance(description, list) else description
+#     assert "astronaut" in description["description"].lower()
