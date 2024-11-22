@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import huggingface_hub
 import PyPDF2
+import streamlit as st
 from datasets import Dataset, concatenate_datasets, load_dataset
 from firerequests import FireRequests
 from rich.progress import Progress
@@ -32,11 +33,15 @@ class BaseTextLoader(ABC):
         document_name: str,
         document_file_path: str,
         metadata: Optional[dict[str, Any]] = None,
+        streamlit_mode: bool = False,
+        preview_in_app: bool = False,
     ):
         self.url = url
         self.document_name = document_name
         self.document_file_path = document_file_path
         self.metadata = metadata or {}
+        self.streamlit_mode = streamlit_mode
+        self.preview_in_app = preview_in_app
         if not os.path.exists(self.document_file_path):
             FireRequests().download(url, filenames=self.document_file_path)
         with open(self.document_file_path, "rb") as file:
@@ -142,11 +147,24 @@ class BaseTextLoader(ABC):
         processed_pages_counter: int = 1
         total_pages = end_page - start_page
         exclude_pages = exclude_pages or []
+        loader_name = self.__class__.__name__
+
+        if self.preview_in_app and total_pages > 10:
+            warning_message = "Previewing more than 10 pages in app is not recommended due to performance issues."
+            if self.streamlit_mode:
+                st.warning(warning_message)
+            raise ResourceWarning(warning_message)
+
+        streamlit_progressbar = st.progress(
+            0,
+            text=f"Loading page {processed_pages_counter}/{total_pages} using {loader_name}",
+        ) if self.streamlit_mode else None
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
+            nonlocal streamlit_progressbar
             page_data = await self.extract_page_data(page_idx, **kwargs)
-            page_data["loader_name"] = self.__class__.__name__
+            page_data["loader_name"] = loader_name
             for key, value in self.metadata.items():
                 if key not in page_data:
                     page_data[key] = value
@@ -154,8 +172,19 @@ class BaseTextLoader(ABC):
             progress.update(
                 task_id,
                 advance=1,
-                description=f"Loading page {page_idx} using {self.__class__.__name__}",
+                description=f"Loading page {page_idx} using {loader_name}",
             )
+            if streamlit_progressbar:
+                progress_percentage = min(
+                    100, max(0, int((processed_pages_counter / total_pages) * 100))
+                )
+                streamlit_progressbar.progress(
+                    progress_percentage,
+                    text=f"Loading page {page_idx} using {loader_name} ({processed_pages_counter}/{total_pages})",
+                )
+                if self.preview_in_app:
+                    with st.expander(f"Page Index: {page_idx}"):
+                        st.markdown(page_data["text"])
             processed_pages_counter += 1
 
         progress = Progress()
