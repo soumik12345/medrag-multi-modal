@@ -47,6 +47,7 @@ class BM25sRetriever(weave.Model):
     def index(
         self,
         chunk_dataset: Union[Dataset, str],
+        chunk_dataset_split: str,
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
     ):
@@ -77,11 +78,12 @@ class BM25sRetriever(weave.Model):
         Args:
             chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
                 dataset repository name or a dataset object can be provided.
+            chunk_dataset_split (str): The split of the dataset to be indexed.
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
         """
         chunk_dataset = (
-            load_dataset(chunk_dataset, split="chunks")
+            load_dataset(chunk_dataset, split=chunk_dataset_split)
             if isinstance(chunk_dataset, str)
             else chunk_dataset
         )

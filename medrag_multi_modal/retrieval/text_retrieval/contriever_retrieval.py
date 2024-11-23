@@ -6,6 +6,7 @@ from typing import Optional, Union
 import huggingface_hub
 import safetensors
 import safetensors.torch
+import streamlit as st
 import torch
 import torch.nn.functional as F
 import weave
@@ -62,7 +63,9 @@ class ContrieverRetriever(weave.Model):
         self._vector_index = vector_index
         self._chunk_dataset = chunk_dataset
 
-    def encode(self, corpus: list[str], batch_size: int) -> torch.Tensor:
+    def encode(
+        self, corpus: list[str], batch_size: int, streamlit_mode: bool = False
+    ) -> torch.Tensor:
         embeddings = []
         iterable = (
             track(
@@ -72,6 +75,15 @@ class ContrieverRetriever(weave.Model):
             if batch_size > 1
             else range(0, len(corpus), batch_size)
         )
+        streamlit_progressbar = (
+            st.progress(
+                0,
+                text="Indexing batches",
+            )
+            if streamlit_mode and batch_size > 1
+            else None
+        )
+        batch_idx = 0
         for idx in iterable:
             batch = corpus[idx : idx + batch_size]
             inputs = self._tokenizer(
@@ -81,15 +93,26 @@ class ContrieverRetriever(weave.Model):
                 outputs = self._model(**inputs)
                 batch_embeddings = mean_pooling(outputs[0], inputs["attention_mask"])
                 embeddings.append(batch_embeddings)
+            if streamlit_progressbar:
+                progress_percentage = min(
+                    100, max(0, int(((idx + batch_size) / len(corpus)) * 100))
+                )
+                streamlit_progressbar.progress(
+                    progress_percentage,
+                    text=f"Indexing batch ({batch_idx}/{len(corpus) // batch_size})",
+                )
+                batch_idx += 1
         embeddings = torch.cat(embeddings, dim=0)
         return embeddings
 
     def index(
         self,
         chunk_dataset: Union[str, Dataset],
+        chunk_dataset_split: str,
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
         batch_size: int = 32,
+        streamlit_mode: bool = False,
     ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a file.
@@ -118,15 +141,16 @@ class ContrieverRetriever(weave.Model):
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
             batch_size (int, optional): The batch size to use for encoding the corpus.
+            streamlit_mode (bool, optional): Whether to use streamlit mode.
         """
         self._chunk_dataset = (
-            load_dataset(chunk_dataset, split="chunks")
+            load_dataset(chunk_dataset, split=chunk_dataset_split)
             if isinstance(chunk_dataset, str)
             else chunk_dataset
         )
         corpus = [row["text"] for row in self._chunk_dataset]
         with torch.no_grad():
-            vector_index = self.encode(corpus, batch_size)
+            vector_index = self.encode(corpus, batch_size, streamlit_mode)
             self._vector_index = vector_index
             if index_repo_id:
                 index_save_dir = os.path.join(
