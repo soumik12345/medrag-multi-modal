@@ -13,12 +13,15 @@ from rich.progress import Progress
 
 class BaseTextLoader(ABC):
     """
-    An abstract base class for loading text from a PDF file, processing it into markdown, and optionally publishing it to a Weave dataset.
+    An abstract base class for loading text from a PDF file, processing it into markdown,
+    and optionally publishing it to a Weave dataset.
 
-    This class handles the downloading of a PDF file from a given URL if it does not already exist locally.
-    Subclasses should implement the specific PDF reading, text extraction, and markdown conversion methods.
+    This class handles the downloading of a PDF file from a given URL if it does not already
+    exist locally. Subclasses should implement the specific PDF reading, text extraction,
+    and markdown conversion methods.
 
-    The processed pages are finally stored in a list of Page objects, which can be optionally published to a Weave dataset.
+    The processed pages are finally stored in a list of Page objects, which can be optionally
+    published to a Weave dataset.
 
     Args:
         url (str): The URL of the PDF file to download if not present locally.
@@ -55,8 +58,8 @@ class BaseTextLoader(ABC):
         Get the start and end page indices for processing.
 
         Args:
-            start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
-            end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            start_page (Optional[int]): The starting page index (0-based) to process.
+            end_page (Optional[int]): The ending page index (0-based) to process.
 
         Returns:
             tuple[int, int]: A tuple containing the start and end page indices.
@@ -101,6 +104,8 @@ class BaseTextLoader(ABC):
         end_page: Optional[int] = None,
         exclude_pages: Optional[list[int]] = None,
         dataset_repo_id: Optional[str] = None,
+        dataset_split: Optional[str] = None,
+        is_dataset_private: bool = False,
         overwrite_dataset: bool = False,
         **kwargs,
     ) -> Dataset:
@@ -121,11 +126,13 @@ class BaseTextLoader(ABC):
         If a `dataset_repo_id` is provided, the processed pages are published to a HuggingFace dataset.
 
         Args:
-            start_page (Optional[int]): The starting page index (0-based) to process. Defaults to the first page.
-            end_page (Optional[int]): The ending page index (0-based) to process. Defaults to the last page.
+            start_page (Optional[int]): The starting page index (0-based) to process.
+            end_page (Optional[int]): The ending page index (0-based) to process.
             exclude_pages (Optional[list[int]]): The list of page indices to exclude from processing.
             dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish the pages to, if provided.
-            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
+            dataset_split (Optional[str]): The split of the HuggingFace dataset to publish the pages to, if provided.
+            is_dataset_private (bool): Whether the dataset should be private.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists.
             **kwargs: Additional keyword arguments that will be passed to extract_page_data method and the underlying library.
 
         Returns:
@@ -148,6 +155,7 @@ class BaseTextLoader(ABC):
         total_pages = end_page - start_page
         exclude_pages = exclude_pages or []
         loader_name = self.__class__.__name__
+        dataset_split = loader_name.lower() if dataset_split is None else dataset_split
 
         if self.preview_in_app and total_pages > 10:
             warning_message = "Previewing more than 10 pages in app is not recommended due to performance issues."
@@ -155,10 +163,14 @@ class BaseTextLoader(ABC):
                 st.warning(warning_message)
             raise ResourceWarning(warning_message)
 
-        streamlit_progressbar = st.progress(
-            0,
-            text=f"Loading page {processed_pages_counter}/{total_pages} using {loader_name}",
-        ) if self.streamlit_mode else None
+        streamlit_progressbar = (
+            st.progress(
+                0,
+                text=f"Loading page {processed_pages_counter}/{total_pages} using {loader_name}",
+            )
+            if self.streamlit_mode
+            else None
+        )
 
         async def process_page(page_idx):
             nonlocal processed_pages_counter
@@ -180,7 +192,7 @@ class BaseTextLoader(ABC):
                 )
                 streamlit_progressbar.progress(
                     progress_percentage,
-                    text=f"Loading page {page_idx} using {loader_name} ({processed_pages_counter}/{total_pages})",
+                    text=f"Loading page {page_idx} using {loader_name} ({processed_pages_counter - 1}/{total_pages})",
                 )
                 if self.preview_in_app:
                     with st.expander(f"Page Index: {page_idx}"):
@@ -203,12 +215,18 @@ class BaseTextLoader(ABC):
         dataset = Dataset.from_list(pages)
         if dataset_repo_id:
             if huggingface_hub.repo_exists(dataset_repo_id, repo_type="dataset"):
-                print("Dataset already exists")
+                existing_dataset = load_dataset(dataset_repo_id)
                 if not overwrite_dataset:
-                    print("Not overwriting dataset")
-                    dataset = concatenate_datasets(
-                        [dataset, load_dataset(dataset_repo_id, split="corpus")]
-                    )
-            dataset.push_to_hub(repo_id=dataset_repo_id, split="corpus", private=False)
+                    if dataset_split in existing_dataset:
+                        existing_dataset[dataset_split] = concatenate_datasets(
+                            [dataset, existing_dataset[dataset_split]]
+                        )
+                        dataset = existing_dataset
+                else:
+                    existing_dataset[dataset_split] = dataset
+                    dataset = existing_dataset
+            dataset.push_to_hub(
+                repo_id=dataset_repo_id, split=dataset_split, private=is_dataset_private
+            )
 
         return dataset
