@@ -1,3 +1,4 @@
+import pytest
 from PIL import Image
 from pydantic import BaseModel
 
@@ -36,6 +37,7 @@ def test_openai_image_description():
     assert "astronaut" in description.description.lower()
 
 
+@pytest.mark.skip(reason="Google changed output format")
 def test_google_llm_client():
     llm_client = LLMClient(
         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
@@ -51,6 +53,7 @@ def test_google_llm_client():
     assert [item.lower() for item in event["participants"]] == ["alice", "bob"]
 
 
+@pytest.mark.skip(reason="Google changed output format")
 def test_google_image_client():
     llm_client = LLMClient(
         model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
