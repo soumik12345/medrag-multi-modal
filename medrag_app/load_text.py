@@ -21,12 +21,13 @@ elif "document_downloaded" not in st.session_state:
     st.session_state.document_downloaded = False
     st.session_state.load_text = False
 
-if not st.session_state.document_downloaded:
-    document_url = st.sidebar.text_input(
-        label="Document URL",
-        placeholder="URL of the document to load",
-    )
 
+document_url = st.sidebar.text_input(
+    label="Document URL",
+    placeholder="URL of the document to load",
+)
+
+if not st.session_state.document_downloaded:
     download_button = st.sidebar.button("Download Document")
     if download_button and not st.session_state.document_downloaded:
         with st.sidebar.status("Downloading document..."):
@@ -85,7 +86,7 @@ if proceed_to_text_loader_configuration:
                 is_dataset_private = st.toggle("Private Dataset")
 
                 load_text_button = st.button("Load Text")
-            
+
             if load_text_button and not st.session_state.load_text:
                 st.session_state.load_text = True
                 with st.spinner("Loading text..."):
@@ -97,7 +98,10 @@ if proceed_to_text_loader_configuration:
                             is_dataset_private=is_dataset_private,
                         )
                     )
-                st.success("Text loaded successfully!")
+                success_message = "Text loaded successfully!"
+                if dataset_repo_id != "":
+                    success_message += f" Dataset published to https://huggingface.co/datasets/{dataset_repo_id}"
+                st.success(success_message)
                 st.balloons()
 
             if dataset is not None and preview_in_app:

@@ -192,7 +192,7 @@ class BaseTextLoader(ABC):
                 )
                 streamlit_progressbar.progress(
                     progress_percentage,
-                    text=f"Loading page {page_idx} using {loader_name} ({processed_pages_counter - 1}/{total_pages})",
+                    text=f"Loading page {page_idx} using {loader_name} ({processed_pages_counter}/{total_pages + 1})",
                 )
                 if self.preview_in_app:
                     with st.expander(f"Page Index: {page_idx}"):
@@ -222,11 +222,12 @@ class BaseTextLoader(ABC):
                             [dataset, existing_dataset[dataset_split]]
                         )
                         dataset = existing_dataset
+                    else:
+                        existing_dataset[dataset_split] = dataset
+                        dataset = existing_dataset
                 else:
                     existing_dataset[dataset_split] = dataset
                     dataset = existing_dataset
-            dataset.push_to_hub(
-                repo_id=dataset_repo_id, split=dataset_split, private=is_dataset_private
-            )
+            dataset.push_to_hub(repo_id=dataset_repo_id, private=is_dataset_private)
 
         return dataset
