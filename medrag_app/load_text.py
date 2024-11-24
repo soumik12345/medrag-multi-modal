@@ -72,11 +72,21 @@ if proceed_to_text_loader_configuration:
 
         if text_loader.page_count > 0:
             with st.expander(f"{text_loader_name} Configuration", expanded=True):
-                start_page, end_page = st.select_slider(
-                    label="Pages",
-                    options=list(range(text_loader.page_count)),
-                    value=(0, text_loader.page_count - 1),
-                )
+                col1, col2 = st.columns(2)
+                with col1:
+                    start_page = st.number_input(
+                        f"Start Page Index (min: 0)",
+                        min_value=0,
+                        max_value=text_loader.page_count-1,
+                        value=0
+                    )
+                with col2:
+                    end_page = st.number_input(
+                        f"End Page Index (max: {text_loader.page_count-1})", 
+                        min_value=start_page,
+                        max_value=text_loader.page_count-1,
+                        value=text_loader.page_count-1
+                    )
 
                 excluded_pages = st.multiselect(
                     label="Excluded Pages",
