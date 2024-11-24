@@ -157,7 +157,7 @@ class BaseTextLoader(ABC):
         loader_name = self.__class__.__name__
         dataset_split = loader_name.lower() if dataset_split is None else dataset_split
 
-        if self.preview_in_app and total_pages > 10:
+        if self.preview_in_app and total_pages - len(exclude_pages) > 10:
             warning_message = "Previewing more than 10 pages in app is not recommended due to performance issues."
             if self.streamlit_mode:
                 st.warning(warning_message)

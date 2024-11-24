@@ -71,11 +71,17 @@ if proceed_to_text_loader_configuration:
         )
 
         if text_loader.page_count > 0:
-            with st.expander(f"{text_loader_name} Configuration"):
+            with st.expander(f"{text_loader_name} Configuration", expanded=True):
                 start_page, end_page = st.select_slider(
                     label="Pages",
                     options=list(range(text_loader.page_count)),
                     value=(0, text_loader.page_count - 1),
+                )
+
+                excluded_pages = st.multiselect(
+                    label="Excluded Pages",
+                    options=list(range(start_page, end_page + 1)),
+                    placeholder="Select pages to exclude",
                 )
 
                 dataset_repo_id = st.text_input(
@@ -94,6 +100,7 @@ if proceed_to_text_loader_configuration:
                         text_loader.load_data(
                             start_page=start_page,
                             end_page=end_page,
+                            exclude_pages=[int(i) for i in excluded_pages] if excluded_pages else None,
                             dataset_repo_id=dataset_repo_id,
                             is_dataset_private=is_dataset_private,
                         )
