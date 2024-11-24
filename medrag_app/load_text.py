@@ -74,8 +74,8 @@ if proceed_to_text_loader_configuration:
             with st.expander(f"{text_loader_name} Configuration"):
                 start_page, end_page = st.select_slider(
                     label="Pages",
-                    options=list(range(1, text_loader.page_count + 1)),
-                    value=(1, text_loader.page_count),
+                    options=list(range(text_loader.page_count)),
+                    value=(0, text_loader.page_count - 1),
                 )
 
                 dataset_repo_id = st.text_input(
