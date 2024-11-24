@@ -6,6 +6,7 @@ from typing import Optional, Union
 import huggingface_hub
 import safetensors
 import safetensors.torch
+import streamlit as st
 import torch
 import torch.nn.functional as F
 import weave
@@ -83,9 +84,11 @@ class MedCPTRetriever(weave.Model):
     def index(
         self,
         chunk_dataset: Union[str, Dataset],
+        chunk_dataset_split: str,
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
         batch_size: int = 32,
+        streamlit_mode: bool = False,
     ):
         """
         Indexes a dataset of text chunks using the MedCPT model and optionally saves the vector index.
@@ -116,15 +119,24 @@ class MedCPTRetriever(weave.Model):
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
             batch_size (int, optional): The batch size to use for encoding the corpus.
-
+            streamlit_mode (bool): Whether or not this function is being called inside a streamlit app or not.
         """
         self._chunk_dataset = (
-            load_dataset(chunk_dataset, split="chunks")
+            load_dataset(chunk_dataset, split=chunk_dataset_split)
             if isinstance(chunk_dataset, str)
             else chunk_dataset
         )
         corpus = [row["text"] for row in self._chunk_dataset]
         vector_indices = []
+        streamlit_progressbar = (
+            st.progress(
+                0,
+                text="Indexing batches",
+            )
+            if streamlit_mode and batch_size > 1
+            else None
+        )
+        batch_idx = 1
         with torch.no_grad():
             for idx in track(
                 range(0, len(corpus), batch_size),
@@ -144,6 +156,16 @@ class MedCPTRetriever(weave.Model):
                     .contiguous()
                 )
                 vector_indices.append(batch_vectors)
+                if streamlit_progressbar:
+                    progress_percentage = min(
+                        100, max(0, int(((idx + batch_size) / len(corpus)) * 100))
+                    )
+                    total = (len(corpus) // batch_size) + 1
+                    streamlit_progressbar.progress(
+                        progress_percentage,
+                        text=f"Indexing batch ({batch_idx}/{total})",
+                    )
+                    batch_idx += 1
 
             vector_index = torch.cat(vector_indices, dim=0)
             self._vector_index = vector_index

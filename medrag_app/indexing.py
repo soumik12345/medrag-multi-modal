@@ -45,7 +45,11 @@ if retriever_name != "":
 
     start_indexing = st.sidebar.button(label="index")
 
-    if start_indexing and not st.session_state.start_indexing:
+    if (
+        start_indexing
+        and not st.session_state.start_indexing
+        and chunk_dataset_repo_id is not None
+    ):
         st.session_state.start_indexing = True
         if retriever_name != "BM25sRetriever":
             retriever.index(
@@ -61,3 +65,8 @@ if retriever_name != "":
                 chunk_dataset_split=chunk_dataset_split,
                 index_repo_id=index_repo_id,
             )
+        success_message = "Chunks indexed successfully!"
+        if index_repo_id != "":
+            success_message += f" Vector index published to https://huggingface.co/datasets/{index_repo_id}"
+        st.success(success_message)
+        st.balloons()

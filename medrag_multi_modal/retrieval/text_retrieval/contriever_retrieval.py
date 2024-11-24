@@ -83,7 +83,7 @@ class ContrieverRetriever(weave.Model):
             if streamlit_mode and batch_size > 1
             else None
         )
-        batch_idx = 0
+        batch_idx = 1
         for idx in iterable:
             batch = corpus[idx : idx + batch_size]
             inputs = self._tokenizer(
@@ -97,9 +97,10 @@ class ContrieverRetriever(weave.Model):
                 progress_percentage = min(
                     100, max(0, int(((idx + batch_size) / len(corpus)) * 100))
                 )
+                total = (len(corpus) // batch_size) + 1
                 streamlit_progressbar.progress(
                     progress_percentage,
-                    text=f"Indexing batch ({batch_idx}/{len(corpus) // batch_size})",
+                    text=f"Indexing batch ({batch_idx}/{total})",
                 )
                 batch_idx += 1
         embeddings = torch.cat(embeddings, dim=0)
@@ -141,7 +142,7 @@ class ContrieverRetriever(weave.Model):
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
             batch_size (int, optional): The batch size to use for encoding the corpus.
-            streamlit_mode (bool, optional): Whether to use streamlit mode.
+            streamlit_mode (bool): Whether to use streamlit mode.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split=chunk_dataset_split)

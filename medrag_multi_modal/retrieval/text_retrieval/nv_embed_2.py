@@ -1,10 +1,12 @@
 import json
 import os
 import shutil
+from abc import abstractmethod
 from typing import Optional, Union
 
 import huggingface_hub
 import safetensors
+import streamlit as st
 import torch
 import torch.nn.functional as F
 import weave
@@ -20,18 +22,17 @@ from medrag_multi_modal.utils import (
 )
 
 
-class NVEmbed2Retriever(weave.Model):
+class SentenceTransformerRetriever(weave.Model):
     """
-    `NVEmbed2Retriever` is a class for retrieving relevant text chunks from a dataset using the
-    [NV-Embed-v2](https://huggingface.co/nvidia/NV-Embed-v2) model.
-
-    This class leverages the SentenceTransformer model to encode text chunks into vector representations and
-    performs similarity-based retrieval. It supports indexing a dataset of text chunks, saving the vector index,
-    and retrieving the most relevant chunks for a given query.
+    The `SentenceTransformerRetriever` class leverages a [SentenceTransformer](https://sbert.net/)
+    model to encode text chunks into vector representations and performs similarity-based retrieval.
+    It supports indexing a dataset of text chunks, saving the vector index, and retrieving the most
+    relevant chunks for a given query.
 
     Args:
         model_name (str): The name of the pre-trained model to use for encoding.
-        vector_index (Optional[torch.Tensor]): The tensor containing the vector representations of the indexed chunks.
+        vector_index (Optional[torch.Tensor]): The tensor containing the vector representations of
+            the indexed chunks.
         chunk_dataset (Optional[list[dict]]): The dataset of text chunks to be indexed.
     """
 
@@ -71,6 +72,7 @@ class NVEmbed2Retriever(weave.Model):
         index_repo_id: Optional[str] = None,
         cleanup: bool = True,
         batch_size: int = 8,
+        streamlit_mode: bool = False,
     ):
         """
         Indexes a dataset of text chunks and optionally saves the vector index to a Huggingface repository.
@@ -82,9 +84,9 @@ class NVEmbed2Retriever(weave.Model):
 
         !!! example "Example Usage"
             ```python
-            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
+            from medrag_multi_modal.retrieval.text_retrieval import SentenceTransformerRetriever
 
-            retriever = NVEmbed2Retriever()
+            retriever = SentenceTransformerRetriever()
             retriever.index(
                 chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
                 index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
@@ -105,6 +107,7 @@ class NVEmbed2Retriever(weave.Model):
             index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
             cleanup (bool, optional): Whether to delete the local index directory after saving the vector index.
             batch_size (int, optional): The batch size to use for encoding the corpus.
+            streamlit_mode (bool): Whether or not this function is being called inside a streamlit app or not.
         """
         self._chunk_dataset = (
             load_dataset(chunk_dataset, split="chunks")
@@ -113,6 +116,15 @@ class NVEmbed2Retriever(weave.Model):
         )
         corpus = [row["text"] for row in self._chunk_dataset]
         vector_indices = []
+        streamlit_progressbar = (
+            st.progress(
+                0,
+                text="Indexing batches",
+            )
+            if streamlit_mode and batch_size > 1
+            else None
+        )
+        batch_idx = 1
 
         for idx in track(
             range(0, len(corpus), batch_size),
@@ -123,6 +135,16 @@ class NVEmbed2Retriever(weave.Model):
                 self.add_eos(batch), batch_size=len(batch), normalize_embeddings=True
             )
             vector_indices.append(torch.tensor(batch_embeddings))
+            if streamlit_progressbar:
+                progress_percentage = min(
+                    100, max(0, int(((idx + batch_size) / len(corpus)) * 100))
+                )
+                total = (len(corpus) // batch_size) + 1
+                streamlit_progressbar.progress(
+                    progress_percentage,
+                    text=f"Indexing batch ({batch_idx}/{total})",
+                )
+                batch_idx += 1
 
         self._vector_index = torch.cat(vector_indices, dim=0)
         with torch.no_grad():
@@ -171,9 +193,9 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
+            from medrag_multi_modal.retrieval.text_retrieval import SentenceTransformerRetriever
 
-            retriever = NVEmbed2Retriever.from_index(
+            retriever = SentenceTransformerRetriever.from_index(
                 index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
                 chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
@@ -234,10 +256,10 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
+            from medrag_multi_modal.retrieval.text_retrieval import SentenceTransformerRetriever
 
             weave.init(project_name="ml-colabs/medrag-multi-modal")
-            retriever = NVEmbed2Retriever.from_index(
+            retriever = SentenceTransformerRetriever.from_index(
                 index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
                 chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
             )
@@ -282,6 +304,7 @@ class NVEmbed2Retriever(weave.Model):
             )
         return retrieved_chunks
 
+    @abstractmethod
     @weave.op()
     def predict(
         self,
@@ -299,7 +322,71 @@ class NVEmbed2Retriever(weave.Model):
         !!! example "Example Usage"
             ```python
             import weave
-            from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
+            from medrag_multi_modal.retrieval.text_retrieval import SentenceTransformerRetriever
+
+            weave.init(project_name="ml-colabs/medrag-multi-modal")
+            retriever = SentenceTransformerRetriever.from_index(
+                index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
+                chunk_dataset="ashwiniai/medrag-text-corpus-chunks",
+            )
+            retriever.predict(query="What is ribosome?")
+            ```
+
+        Args:
+            query (str): The input query string to search for relevant chunks.
+            top_k (int, optional): The number of top relevant chunks to retrieve.
+            metric (SimilarityMetric, optional): The similarity metric to use for scoring.
+
+        Returns:
+            list: A list of dictionaries, each containing a retrieved chunk and its relevance score.
+        """
+        return self.retrieve(query, top_k, metric)
+
+
+class NVEmbed2Retriever(SentenceTransformerRetriever):
+    """
+    `NVEmbed2Retriever` is a class for retrieving relevant text chunks from a dataset using the
+    [NV-Embed-v2](https://huggingface.co/nvidia/NV-Embed-v2) model.
+
+    This class leverages the SentenceTransformer model to encode text chunks into vector representations and
+    performs similarity-based retrieval. It supports indexing a dataset of text chunks, saving the vector index,
+    and retrieving the most relevant chunks for a given query.
+
+    Args:
+        vector_index (Optional[torch.Tensor]): The tensor containing the vector representations of the indexed chunks.
+        chunk_dataset (Optional[list[dict]]): The dataset of text chunks to be indexed.
+    """
+
+    def __init__(
+        self,
+        vector_index: Optional[torch.Tensor] = None,
+        chunk_dataset: Optional[list[dict]] = None,
+    ):
+        super().__init__(
+            self,
+            model_name="nvidia/NV-Embed-v2",
+            vector_index=vector_index,
+            chunk_dataset=chunk_dataset,
+        )
+
+    @weave.op()
+    def predict(
+        self,
+        query: str,
+        top_k: int = 2,
+        metric: SimilarityMetric = SimilarityMetric.COSINE,
+    ):
+        """
+        Predicts the top-k most relevant chunks for a given query using the specified similarity metric.
+
+        This method formats the input query string by prepending an instruction prompt and then calls the
+        `retrieve` method to get the most relevant chunks. The similarity metric can be either cosine similarity
+        or Euclidean distance. The top-k chunks with the highest similarity scores are returned.
+
+        !!! example "Example Usage"
+            ```python
+            import weave
+            from medrag_multi_modal.retrieval.text_retrieval import SentenceTransformerRetriever
 
             weave.init(project_name="ml-colabs/medrag-multi-modal")
             retriever = NVEmbed2Retriever.from_index(
