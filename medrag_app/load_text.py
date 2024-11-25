@@ -75,17 +75,17 @@ if proceed_to_text_loader_configuration:
                 col1, col2 = st.columns(2)
                 with col1:
                     start_page = st.number_input(
-                        f"Start Page Index (min: 0)",
+                        "Start Page Index (min: 0)",
                         min_value=0,
-                        max_value=text_loader.page_count-1,
-                        value=0
+                        max_value=text_loader.page_count - 1,
+                        value=0,
                     )
                 with col2:
                     end_page = st.number_input(
-                        f"End Page Index (max: {text_loader.page_count-1})", 
+                        f"End Page Index (max: {text_loader.page_count-1})",
                         min_value=start_page,
-                        max_value=text_loader.page_count-1,
-                        value=text_loader.page_count-1
+                        max_value=text_loader.page_count - 1,
+                        value=text_loader.page_count - 1,
                     )
 
                 if "excluded_pages" not in st.session_state:
@@ -96,45 +96,72 @@ if proceed_to_text_loader_configuration:
                     options=list(range(start_page, end_page + 1)),
                     default=st.session_state.excluded_pages,
                     placeholder="Select pages to exclude",
-                    key="excluded_pages_multiselect"
+                    key="excluded_pages_multiselect",
                 )
-                
-                if "excluded_pages_multiselect" in st.session_state and st.session_state.excluded_pages_multiselect != st.session_state.excluded_pages:
-                    st.session_state.excluded_pages = st.session_state.excluded_pages_multiselect.copy()
+
+                if (
+                    "excluded_pages_multiselect" in st.session_state
+                    and st.session_state.excluded_pages_multiselect
+                    != st.session_state.excluded_pages
+                ):
+                    st.session_state.excluded_pages = (
+                        st.session_state.excluded_pages_multiselect.copy()
+                    )
                     st.rerun()
 
                 @st.dialog("Bulk Exclude Pages")
                 def bulk_exclude_pages():
                     csv_input = st.text_area(
                         "Paste comma-separated page numbers to exclude",
-                        placeholder="example: 1, 2, 3, 4, 5"
+                        placeholder="example: 1, 2, 3, 4, 5",
                     )
 
                     if st.button("Exclude Pages"):
                         if csv_input:
                             try:
-                                pages = [int(x.strip()) for x in csv_input.split(',')]
+                                pages = [int(x.strip()) for x in csv_input.split(",")]
 
-                                out_of_range = [p for p in pages if p < start_page or p > end_page]
+                                out_of_range = [
+                                    p for p in pages if p < start_page or p > end_page
+                                ]
                                 if out_of_range:
-                                    st.error(f"Pages {sorted(out_of_range)} are outside the valid range ({start_page}-{end_page})")
+                                    st.error(
+                                        f"Pages {sorted(out_of_range)} are outside the valid range ({start_page}-{end_page})"
+                                    )
                                     return
 
-                                already_excluded = [p for p in pages if p in st.session_state.excluded_pages]
+                                already_excluded = [
+                                    p
+                                    for p in pages
+                                    if p in st.session_state.excluded_pages
+                                ]
                                 if already_excluded:
-                                    st.warning(f"Pages {already_excluded} are already in the exclusion list")
+                                    st.warning(
+                                        f"Pages {already_excluded} are already in the exclusion list"
+                                    )
 
-                                valid_pages = [p for p in pages if start_page <= p <= end_page and p not in st.session_state.excluded_pages]
-                                
+                                valid_pages = [
+                                    p
+                                    for p in pages
+                                    if start_page <= p <= end_page
+                                    and p not in st.session_state.excluded_pages
+                                ]
+
                                 if valid_pages:
-                                    st.session_state.excluded_pages = sorted(st.session_state.excluded_pages + valid_pages)
-                                    st.success(f"Added {len(valid_pages)} pages to exclusion list")
+                                    st.session_state.excluded_pages = sorted(
+                                        st.session_state.excluded_pages + valid_pages
+                                    )
+                                    st.success(
+                                        f"Added {len(valid_pages)} pages to exclusion list"
+                                    )
                                     st.rerun()
                                 else:
                                     st.warning("No new valid pages found to exclude")
-                                    
-                            except ValueError as e:
-                                st.error("Invalid input format. Please enter comma-separated numbers (example: 1, 2, 3).")
+
+                            except ValueError:
+                                st.error(
+                                    "Invalid input format. Please enter comma-separated numbers (example: 1, 2, 3)."
+                                )
 
                 if st.button("📋", help="Bulk exclude pages"):
                     bulk_exclude_pages()
@@ -155,7 +182,11 @@ if proceed_to_text_loader_configuration:
                         text_loader.load_data(
                             start_page=start_page,
                             end_page=end_page,
-                            exclude_pages=[int(i) for i in excluded_pages] if excluded_pages else None,
+                            exclude_pages=(
+                                [int(i) for i in excluded_pages]
+                                if excluded_pages
+                                else None
+                            ),
                             dataset_repo_id=dataset_repo_id,
                             is_dataset_private=is_dataset_private,
                         )
