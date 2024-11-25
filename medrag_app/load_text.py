@@ -88,11 +88,56 @@ if proceed_to_text_loader_configuration:
                         value=text_loader.page_count-1
                     )
 
+                if "excluded_pages" not in st.session_state:
+                    st.session_state.excluded_pages = []
+
                 excluded_pages = st.multiselect(
                     label="Excluded Pages",
                     options=list(range(start_page, end_page + 1)),
+                    default=st.session_state.excluded_pages,
                     placeholder="Select pages to exclude",
+                    key="excluded_pages_multiselect"
                 )
+                
+                if "excluded_pages_multiselect" in st.session_state and st.session_state.excluded_pages_multiselect != st.session_state.excluded_pages:
+                    st.session_state.excluded_pages = st.session_state.excluded_pages_multiselect.copy()
+                    st.rerun()
+
+                @st.dialog("Bulk Exclude Pages")
+                def bulk_exclude_pages():
+                    csv_input = st.text_area(
+                        "Paste comma-separated page numbers to exclude",
+                        placeholder="example: 1, 2, 3, 4, 5"
+                    )
+
+                    if st.button("Exclude Pages"):
+                        if csv_input:
+                            try:
+                                pages = [int(x.strip()) for x in csv_input.split(',')]
+
+                                out_of_range = [p for p in pages if p < start_page or p > end_page]
+                                if out_of_range:
+                                    st.error(f"Pages {sorted(out_of_range)} are outside the valid range ({start_page}-{end_page})")
+                                    return
+
+                                already_excluded = [p for p in pages if p in st.session_state.excluded_pages]
+                                if already_excluded:
+                                    st.warning(f"Pages {already_excluded} are already in the exclusion list")
+
+                                valid_pages = [p for p in pages if start_page <= p <= end_page and p not in st.session_state.excluded_pages]
+                                
+                                if valid_pages:
+                                    st.session_state.excluded_pages = sorted(st.session_state.excluded_pages + valid_pages)
+                                    st.success(f"Added {len(valid_pages)} pages to exclusion list")
+                                    st.rerun()
+                                else:
+                                    st.warning("No new valid pages found to exclude")
+                                    
+                            except ValueError as e:
+                                st.error("Invalid input format. Please enter comma-separated numbers (example: 1, 2, 3).")
+
+                if st.button("📋", help="Bulk exclude pages"):
+                    bulk_exclude_pages()
 
                 dataset_repo_id = st.text_input(
                     label="HuggingFace Dataset Repository",
