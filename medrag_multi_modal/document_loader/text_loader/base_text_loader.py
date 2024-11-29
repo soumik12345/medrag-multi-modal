@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+import rich
 import huggingface_hub
 import PyPDF2
 import streamlit as st
@@ -228,6 +229,9 @@ class BaseTextLoader(ABC):
                 else:
                     existing_dataset[dataset_split] = dataset
                     dataset = existing_dataset
+
+            if "train" in dataset.keys():
+                del dataset["train"]
             dataset.push_to_hub(repo_id=dataset_repo_id, private=is_dataset_private)
 
         return dataset
