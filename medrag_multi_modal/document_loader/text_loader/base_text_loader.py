@@ -3,11 +3,10 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-import rich
 import huggingface_hub
 import PyPDF2
 import streamlit as st
-from datasets import Dataset, concatenate_datasets, load_dataset
+from datasets import Dataset, DatasetDict, concatenate_datasets, load_dataset
 from firerequests import FireRequests
 from rich.progress import Progress
 
@@ -230,8 +229,15 @@ class BaseTextLoader(ABC):
                     existing_dataset[dataset_split] = dataset
                     dataset = existing_dataset
 
-            if "train" in dataset.keys():
-                del dataset["train"]
-            dataset.push_to_hub(repo_id=dataset_repo_id, private=is_dataset_private)
+            if isinstance(dataset, DatasetDict):
+                if "train" in dataset.keys():
+                    del dataset["train"]
+                dataset.push_to_hub(repo_id=dataset_repo_id, private=is_dataset_private)
+            else:
+                dataset.push_to_hub(
+                    repo_id=dataset_repo_id,
+                    private=is_dataset_private,
+                    split=dataset_split,
+                )
 
         return dataset
