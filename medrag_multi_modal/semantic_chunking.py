@@ -6,7 +6,7 @@ import semchunk
 import streamlit as st
 import tiktoken
 import tokenizers
-from datasets import Dataset, concatenate_datasets, load_dataset
+from datasets import Dataset, DatasetDict, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
 
@@ -155,8 +155,17 @@ class SemanticChunker:
                 else:
                     existing_dataset[dataset_split] = dataset
                     dataset = existing_dataset
-            dataset.push_to_hub(
-                repo_id=chunk_dataset_repo_id, private=is_dataset_private
-            )
+            if isinstance(dataset, DatasetDict):
+                if "train" in dataset.keys():
+                    del dataset["train"]
+                dataset.push_to_hub(
+                    repo_id=chunk_dataset_repo_id, private=is_dataset_private
+                )
+            else:
+                dataset.push_to_hub(
+                    repo_id=chunk_dataset_repo_id,
+                    private=is_dataset_private,
+                    split=dataset_split,
+                )
 
         return dataset
