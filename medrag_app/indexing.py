@@ -30,7 +30,11 @@ if retriever_name != "":
     )
     chunk_dataset_split = st.sidebar.selectbox(
         label="Chunk Dataset Split",
-        options=["pdfplumbertextloader"],
+        options=[
+            "pypdf2textloader",
+            "pdfplumbertextloader",
+            "pymupdf4llmtextloader",
+        ],
         index=0,
     )
 
