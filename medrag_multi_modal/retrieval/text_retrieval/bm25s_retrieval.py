@@ -123,7 +123,10 @@ class BM25sRetriever(weave.Model):
                 shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_index(cls, index_repo_id: str, ):
+    def from_index(
+        cls,
+        index_repo_id: str,
+    ):
         """
         Creates an instance of the class from a Huggingface repository.
 

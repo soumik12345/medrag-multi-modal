@@ -2,8 +2,8 @@ import asyncio
 import importlib
 import os
 
-import streamlit as st
 import gdown
+import streamlit as st
 from datasets import Dataset
 from firerequests import FireRequests
 

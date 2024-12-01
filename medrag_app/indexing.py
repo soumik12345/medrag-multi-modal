@@ -22,7 +22,7 @@ if retriever_name != "":
     retriever_class = getattr(importlib.import_module(module_name), retriever_name)
     with st.sidebar.status("Initializing retriever..."):
         retriever = retriever_class()
-    
+
     if retriever_name == "MedCPTRetriever":
         chunk_size = st.sidebar.slider(
             label="Chunk Size", min_value=128, max_value=1024, value=512, step=128

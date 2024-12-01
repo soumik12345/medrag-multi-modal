@@ -3,10 +3,10 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+import gdown
 import huggingface_hub
 import PyPDF2
 import streamlit as st
-import gdown
 from datasets import Dataset, DatasetDict, concatenate_datasets, load_dataset
 from firerequests import FireRequests
 from rich.progress import Progress

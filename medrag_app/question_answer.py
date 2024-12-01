@@ -1,7 +1,7 @@
-import streamlit as st
-import importlib
 
+import streamlit as st
 import weave
+
 from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
 from medrag_multi_modal.retrieval.text_retrieval import (
     BM25sRetriever,
