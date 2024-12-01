@@ -59,7 +59,7 @@ class SentenceTransformerRetriever(weave.Model):
         self._vector_index = vector_index
         self._chunk_dataset = chunk_dataset
 
-    def add_eos(self, input_examples):
+    def add_end_of_sequence_tokens(self, input_examples):
         input_examples = [
             input_example + self._model.tokenizer.eos_token
             for input_example in input_examples
@@ -132,7 +132,9 @@ class SentenceTransformerRetriever(weave.Model):
         ):
             batch = corpus[idx : idx + batch_size]
             batch_embeddings = self._model.encode(
-                self.add_eos(batch), batch_size=len(batch), normalize_embeddings=True
+                self.add_end_of_sequence_tokens(batch),
+                batch_size=len(batch),
+                normalize_embeddings=True,
             )
             vector_indices.append(torch.tensor(batch_embeddings))
             if streamlit_progressbar:
@@ -179,7 +181,12 @@ class SentenceTransformerRetriever(weave.Model):
                     shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
+    def from_index(
+        cls,
+        chunk_dataset: Union[str, Dataset],
+        index_repo_id: str,
+        chunk_dataset_split: Optional[str] = None,
+    ):
         """
         Creates an instance of the class from a Huggingface repository.
 
@@ -212,7 +219,8 @@ class SentenceTransformerRetriever(weave.Model):
         Args:
             chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
                 dataset repository name or a dataset object can be provided.
-            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            index_repo_id (str): The Huggingface repository of the index artifact to be saved.
+            chunk_dataset_split (Optional[str]): The split of the dataset to be indexed.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index,
@@ -226,7 +234,7 @@ class SentenceTransformerRetriever(weave.Model):
         device = torch.device(get_torch_backend())
         vector_index = vector_index.to(device)
         chunk_dataset = (
-            load_dataset(chunk_dataset, split="chunks")
+            load_dataset(chunk_dataset, split=chunk_dataset_split)
             if isinstance(chunk_dataset, str)
             else chunk_dataset
         )
@@ -285,7 +293,7 @@ class SentenceTransformerRetriever(weave.Model):
         device = torch.device(get_torch_backend())
         with torch.no_grad():
             query_embedding = self._model.encode(
-                self.add_eos(query), normalize_embeddings=True
+                self.add_end_of_sequence_tokens(query), normalize_embeddings=True
             )
             query_embedding = torch.from_numpy(query_embedding).to(device)
             if metric == SimilarityMetric.EUCLIDEAN:

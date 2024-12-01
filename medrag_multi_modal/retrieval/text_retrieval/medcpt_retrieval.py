@@ -204,7 +204,12 @@ class MedCPTRetriever(weave.Model):
                     shutil.rmtree(index_save_dir)
 
     @classmethod
-    def from_index(cls, chunk_dataset: Union[str, Dataset], index_repo_id: str):
+    def from_index(
+        cls,
+        chunk_dataset: Union[str, Dataset],
+        index_repo_id: str,
+        chunk_dataset_split: Optional[str] = None,
+    ):
         """
         Creates an instance of the class from a Huggingface repository.
 
@@ -227,7 +232,8 @@ class MedCPTRetriever(weave.Model):
         Args:
             chunk_dataset (str): The Huggingface dataset containing the text chunks to be indexed. Either a
                 dataset repository name or a dataset object can be provided.
-            index_repo_id (Optional[str]): The Huggingface repository of the index artifact to be saved.
+            index_repo_id (str): The Huggingface repository of the index artifact to be saved.
+            chunk_dataset_split (Optional[str]): The split of the dataset to be indexed.
 
         Returns:
             An instance of the class initialized with the retrieved model name, vector index, and chunk dataset.
@@ -242,7 +248,7 @@ class MedCPTRetriever(weave.Model):
         with open(os.path.join(index_dir, "config.json"), "r") as config_file:
             metadata = json.load(config_file)
         chunk_dataset = (
-            load_dataset(chunk_dataset, split="chunks")
+            load_dataset(chunk_dataset, split=chunk_dataset_split)
             if isinstance(chunk_dataset, str)
             else chunk_dataset
         )
