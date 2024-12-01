@@ -3,10 +3,9 @@ import io
 
 import jsonlines
 import torch
+import wandb
 from huggingface_hub import HfApi
 from PIL import Image
-
-import wandb
 
 
 def get_wandb_artifact(
