@@ -3,9 +3,10 @@ from typing import Callable, Optional, Union
 
 import huggingface_hub
 import semchunk
+import streamlit as st
 import tiktoken
 import tokenizers
-from datasets import Dataset, concatenate_datasets, load_dataset
+from datasets import Dataset, DatasetDict, concatenate_datasets, load_dataset
 from rich.progress import track
 from transformers import PreTrainedTokenizer
 
@@ -36,6 +37,7 @@ class SemanticChunker:
         chunker = SemanticChunker(chunk_size=256)
         chunker.chunk(
             document_dataset="geekyrakshit/grays-anatomy-test",
+            dataset_split="pdfplumbertextloader",
             chunk_dataset_repo_id="geekyrakshit/grays-anatomy-chunks-test",
         )
         ```
@@ -57,6 +59,7 @@ class SemanticChunker:
         chunk_size: Optional[int] = None,
         max_token_chars: Optional[int] = None,
         memoize: bool = True,
+        streamlit_mode: bool = False,
     ) -> None:
         self.chunker = semchunk.chunkerify(
             tokenizer_or_token_counter,
@@ -64,11 +67,14 @@ class SemanticChunker:
             max_token_chars=max_token_chars,
             memoize=memoize,
         )
+        self.streamlit_mode = streamlit_mode
 
     def chunk(
         self,
         document_dataset: Union[Dataset, str],
+        dataset_split: str,
         chunk_dataset_repo_id: Optional[str] = None,
+        is_dataset_private: bool = False,
         overwrite_dataset: bool = False,
     ) -> Dataset:
         """
@@ -82,15 +88,17 @@ class SemanticChunker:
         Args:
             document_dataset (Union[Dataset, str]): The document dataset to be chunked. It can be either
                 a HuggingFace Dataset object or a string representing the dataset repository ID.
+            dataset_split (str): The split of the dataset to publish the chunks to.
             chunk_dataset_repo_id (Optional[str]): The repository ID of the HuggingFace dataset to publish
-                the chunks to, if provided. Defaults to None.
-            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists. Defaults to False.
+                the chunks to, if provided.
+            is_dataset_private (bool): Whether the dataset is private.
+            overwrite_dataset (bool): Whether to overwrite the existing dataset if it exists.
 
         Returns:
             Dataset: A HuggingFace Dataset object containing the chunks.
         """
         document_dataset = (
-            load_dataset(document_dataset, split="corpus")
+            load_dataset(document_dataset, split=dataset_split)
             if isinstance(document_dataset, str)
             else document_dataset
         ).to_list()
@@ -108,12 +116,23 @@ class SemanticChunker:
 
         async def process_all_documents():
             tasks = []
+            streamlit_progressbar = (
+                st.progress(0, text="Chunking documents")
+                if self.streamlit_mode
+                else None
+            )
             for idx, document in track(
                 enumerate(document_dataset),
                 total=len(document_dataset),
                 description="Chunking documents",
             ):
                 tasks.append(process_document(idx, document))
+                if streamlit_progressbar:
+                    progress_percentage = int((idx / (len(document_dataset) - 1)) * 100)
+                    streamlit_progressbar.progress(
+                        progress_percentage,
+                        text=f"Chunking documents ({idx}/{len(document_dataset) - 1})",
+                    )
             await asyncio.gather(*tasks)
 
         asyncio.run(process_all_documents())
@@ -123,13 +142,30 @@ class SemanticChunker:
         dataset = Dataset.from_list(chunks)
         if chunk_dataset_repo_id:
             if huggingface_hub.repo_exists(chunk_dataset_repo_id, repo_type="dataset"):
+                existing_dataset = load_dataset(chunk_dataset_repo_id)
                 if not overwrite_dataset:
-                    dataset = concatenate_datasets(
-                        [
-                            dataset,
-                            load_dataset(chunk_dataset_repo_id, split="chunks"),
-                        ]
-                    )
-            dataset.push_to_hub(repo_id=chunk_dataset_repo_id, split="chunks")
+                    if dataset_split in existing_dataset:
+                        existing_dataset[dataset_split] = concatenate_datasets(
+                            [dataset, existing_dataset[dataset_split]]
+                        )
+                        dataset = existing_dataset
+                    else:
+                        existing_dataset[dataset_split] = dataset
+                        dataset = existing_dataset
+                else:
+                    existing_dataset[dataset_split] = dataset
+                    dataset = existing_dataset
+            if isinstance(dataset, DatasetDict):
+                if "train" in dataset.keys():
+                    del dataset["train"]
+                dataset.push_to_hub(
+                    repo_id=chunk_dataset_repo_id, private=is_dataset_private
+                )
+            else:
+                dataset.push_to_hub(
+                    repo_id=chunk_dataset_repo_id,
+                    private=is_dataset_private,
+                    split=dataset_split,
+                )
 
         return dataset

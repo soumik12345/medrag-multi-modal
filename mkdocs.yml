@@ -85,7 +85,7 @@ nav:
         - BM25-Sparse: 'rag/retrieval/text_retrieval/bm25s.md'
         - Contriever: 'rag/retrieval/text_retrieval/contriever.md'
         - MedCPT: 'rag/retrieval/text_retrieval/medcpt.md'
-        - NV-Embed-v2: 'rag/retrieval/text_retrieval/nv_embed_2.md'
+        - Sentence-Transformers: 'rag/retrieval/text_retrieval/sentence_transformer.md'
       - ColPali: 'rag/retrieval/colpali.md'
     - Assistant:
       - MedQA Assistant: 'rag/assistant/medqa_assistant.md'

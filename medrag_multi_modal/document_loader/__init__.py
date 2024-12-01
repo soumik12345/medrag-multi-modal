@@ -1,6 +1,5 @@
 from .image_loader import (
-    FitzPILImageLoader,
-    MarkerImageLoader,
+    FitzPILImageLoader,  # MarkerImageLoader,
     PDF2ImageLoader,
     PDFPlumberImageLoader,
     PyMuPDFImageLoader,
@@ -18,7 +17,7 @@ __all__ = [
     "PDFPlumberTextLoader",
     "MarkerTextLoader",
     "PDF2ImageLoader",
-    "MarkerImageLoader",
+    # "MarkerImageLoader",
     "PDFPlumberImageLoader",
     "PyMuPDFImageLoader",
     "FitzPILImageLoader",

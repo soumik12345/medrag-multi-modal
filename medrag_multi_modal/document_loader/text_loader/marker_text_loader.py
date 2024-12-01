@@ -1,8 +1,9 @@
 import os
 from typing import Dict
 
-from marker.convert import convert_single_pdf
-from marker.models import load_all_models
+from marker.config.parser import ConfigParser
+from marker.converters.pdf import PdfConverter
+from marker.models import create_model_dict
 
 from medrag_multi_modal.document_loader.text_loader.base_text_loader import (
     BaseTextLoader,
@@ -46,6 +47,10 @@ class MarkerTextLoader(BaseTextLoader):
         document_file_path (str): The local file path where the PDF is stored or will be downloaded.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.models_list = create_model_dict()
+
     async def extract_page_data(self, page_idx: int, **kwargs) -> Dict[str, str]:
         """
         Process a single page of the PDF and extract its structured text using marker-pdf.
@@ -68,20 +73,16 @@ class MarkerTextLoader(BaseTextLoader):
         Returns:
             Dict[str, str]: A dictionary containing the processed page data.
         """
-        model_lst = load_all_models()
-
-        text, _, _ = convert_single_pdf(
-            self.document_file_path,
-            model_lst,
-            max_pages=1,
-            batch_multiplier=1,
-            start_page=page_idx,
-            ocr_all_pages=True,
-            **kwargs,
-        )
+        config_parser = ConfigParser({"page_range": f"{page_idx},{page_idx+1}"})
+        config_dict = config_parser.generate_config_dict()
+        config_dict["pdftext_workers"] = 1
+        rendered = PdfConverter(
+            config=config_dict,
+            artifact_dict=self.models_list,
+        )(self.document_file_path)
 
         return {
-            "text": text,
+            "text": rendered.markdown,
             "page_idx": page_idx,
             "document_name": self.document_name,
             "file_path": self.document_file_path,

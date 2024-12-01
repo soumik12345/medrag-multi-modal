@@ -9,30 +9,31 @@ class BaseAccuracyMetric(weave.Scorer):
     BaseAccuracyMetric is a class that extends the
     [`weave.Scorer`](https://weave-docs.wandb.ai/guides/evaluation/scorers#class-based-scorers)
     to provide a comprehensive evaluation of accuracy metrics for a given set of score rows.
-    
-    This class is designed to process a list of score rows, each containing a 
-    'correct' key that indicates whether a particular prediction was correct. 
-    The `summarize` method calculates various statistical measures and metrics 
+
+    This class is designed to process a list of score rows, each containing a
+    'correct' key that indicates whether a particular prediction was correct.
+    The `summarize` method calculates various statistical measures and metrics
     based on this data, including:
-    
+
     - True and false counts: The number of true and false predictions.
     - True and false fractions: The proportion of true and false predictions.
     - Standard error: The standard error of the mean for the true predictions.
-    - Precision: The ratio of true positive predictions to the total number of 
+    - Precision: The ratio of true positive predictions to the total number of
       positive predictions.
-    - Recall: The ratio of true positive predictions to the total number of 
+    - Recall: The ratio of true positive predictions to the total number of
       actual positives.
-    - F1 Score: The harmonic mean of precision and recall, providing a balance 
+    - F1 Score: The harmonic mean of precision and recall, providing a balance
       between the two metrics.
-    
-    The `summarize` method returns a dictionary containing these metrics, 
+
+    The `summarize` method returns a dictionary containing these metrics,
     allowing for a detailed analysis of the model's performance.
-    
+
     Methods:
         summarize(score_rows: list) -> Optional[dict]:
-            Processes the input score rows to compute and return a dictionary 
+            Processes the input score rows to compute and return a dictionary
             of accuracy metrics.
     """
+
     @weave.op()
     def summarize(self, score_rows: list) -> Optional[dict]:
         """
@@ -45,22 +46,22 @@ class BaseAccuracyMetric(weave.Scorer):
         - True and false counts: The number of true and false predictions.
         - True and false fractions: The proportion of true and false predictions.
         - Standard error: The standard error of the mean for the true predictions.
-        - Precision: The ratio of true positive predictions to the total number of 
+        - Precision: The ratio of true positive predictions to the total number of
           positive predictions.
-        - Recall: The ratio of true positive predictions to the total number of 
+        - Recall: The ratio of true positive predictions to the total number of
           actual positives.
-        - F1 Score: The harmonic mean of precision and recall, providing a balance 
+        - F1 Score: The harmonic mean of precision and recall, providing a balance
           between the two metrics.
 
-        The method returns a dictionary containing these metrics, allowing for a 
+        The method returns a dictionary containing these metrics, allowing for a
         detailed analysis of the model's performance.
 
         Args:
-            score_rows (list): A list of dictionaries, each containing a 'correct' 
+            score_rows (list): A list of dictionaries, each containing a 'correct'
                 key with a boolean value indicating the correctness of a prediction.
 
         Returns:
-            Optional[dict]: A dictionary containing the calculated accuracy metrics, 
+            Optional[dict]: A dictionary containing the calculated accuracy metrics,
                 or None if the input list is empty.
         """
         valid_data = [
