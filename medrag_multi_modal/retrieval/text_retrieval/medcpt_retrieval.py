@@ -57,7 +57,7 @@ class MedCPTRetriever(weave.Model):
         self,
         query_encoder_model_name: str = "ncbi/MedCPT-Query-Encoder",
         article_encoder_model_name: str = "ncbi/MedCPT-Article-Encoder",
-        chunk_size: Optional[int] = None,
+        chunk_size: Optional[int] = 512,
         vector_index: Optional[torch.Tensor] = None,
         chunk_dataset: Optional[list[dict]] = None,
     ):
@@ -67,10 +67,10 @@ class MedCPTRetriever(weave.Model):
             chunk_size=chunk_size,
         )
         self._query_tokenizer = AutoTokenizer.from_pretrained(
-            self.query_encoder_model_name
+            self.query_encoder_model_name, max_length=self.chunk_size
         )
         self._article_tokenizer = AutoTokenizer.from_pretrained(
-            self.article_encoder_model_name
+            self.article_encoder_model_name, max_length=self.chunk_size
         )
         self._query_encoder_model = AutoModel.from_pretrained(
             self.query_encoder_model_name

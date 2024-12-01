@@ -1,5 +1,7 @@
 import streamlit as st
+import importlib
 
+import weave
 from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
 from medrag_multi_modal.retrieval.text_retrieval import (
     BM25sRetriever,
@@ -18,15 +20,27 @@ ALL_AVAILABLE_MODELS = [
 
 # Sidebar for configuration settings
 st.sidebar.title("Configuration Settings")
-project_name = st.sidebar.text_input(
-    label="Project Name",
+weave_project_name = st.sidebar.text_input(
+    label="Weave Project Name",
     value="ml-colabs/medrag-multi-modal",
     placeholder="wandb project name",
     help="format: wandb_username/wandb_project_name",
 )
+
+if weave_project_name != "":
+    weave.init(project_name=weave_project_name)
+
 chunk_dataset_id = st.sidebar.selectbox(
     label="Chunk Dataset ID",
     options=["ashwiniai/medrag-text-corpus-chunks"],
+)
+pdf_loader_name = st.sidebar.selectbox(
+    label="PDF Loader Name",
+    options=[
+        "pypdf2textloader",
+        "pdfplumbertextloader",
+        "pymupdf4llmtextloader",
+    ],
 )
 llm_model = st.sidebar.selectbox(
     label="LLM Model",
@@ -67,7 +81,7 @@ if retriever_type != "":
 
     if retriever_type == "BM25S":
         retriever = BM25sRetriever.from_index(
-            index_repo_id="ashwiniai/medrag-text-corpus-chunks-bm25s"
+            index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-bm25s",
         )
     elif retriever_type == "Contriever":
         retriever = ContrieverRetriever.from_index(
