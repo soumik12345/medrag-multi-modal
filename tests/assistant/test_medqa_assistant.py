@@ -6,8 +6,8 @@ from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
 @pytest.mark.retry(max_attempts=5)
 def test_medqa_assistant():
-    retriever = BM25sRetriever().from_index(
-        index_repo_id="ashwiniai/medrag-text-corpus-chunks-bm25s"
+    retriever = BM25sRetriever.from_index(
+        index_repo_id="ashwiniai/anatomy-corpus-pypdf2textloader-bm25s"
     )
     llm_client = LLMClient(model_name="gemini-1.5-flash")
     medqa_assistant = MedQAAssistant(

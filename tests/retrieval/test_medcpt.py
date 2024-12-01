@@ -2,7 +2,7 @@ from medrag_multi_modal.retrieval.text_retrieval import MedCPTRetriever
 
 
 def test_medcpt_retriever():
-    retriever = MedCPTRetriever().from_index(
+    retriever = MedCPTRetriever.from_index(
         index_repo_id="ashwiniai/anatomy-corpus-pypdf2textloader-medcpt",
         chunk_dataset="ashwiniai/anatomy-corpus-chunks",
         chunk_dataset_split="pypdf2textloader",
