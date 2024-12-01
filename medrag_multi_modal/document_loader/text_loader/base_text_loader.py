@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 import huggingface_hub
 import PyPDF2
 import streamlit as st
+import gdown
 from datasets import Dataset, DatasetDict, concatenate_datasets, load_dataset
 from firerequests import FireRequests
 from rich.progress import Progress
@@ -46,7 +47,12 @@ class BaseTextLoader(ABC):
         self.streamlit_mode = streamlit_mode
         self.preview_in_app = preview_in_app
         if not os.path.exists(self.document_file_path):
-            FireRequests().download(url, filenames=self.document_file_path)
+            if self.url.startswith("http"):
+                FireRequests().download(self.url, filenames=self.document_file_path)
+            else:
+                self.url = f"https://drive.google.com/uc?id={self.url}"
+                gdown.download(self.url, output=self.document_file_path)
+
         with open(self.document_file_path, "rb") as file:
             pdf_reader = PyPDF2.PdfReader(file)
             self.page_count = len(pdf_reader.pages)

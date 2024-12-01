@@ -3,6 +3,7 @@ import importlib
 import os
 
 import streamlit as st
+import gdown
 from datasets import Dataset
 from firerequests import FireRequests
 
@@ -24,7 +25,8 @@ elif "document_downloaded" not in st.session_state:
 
 document_url = st.sidebar.text_input(
     label="Document URL",
-    placeholder="URL of the document to load",
+    placeholder="URL or Google Drive ID",
+    help="URL or Google Drive ID of the document to load, in the format https://drive.google.com/uc?id=<ID> or full URL to the document",
 )
 
 if not st.session_state.document_downloaded:
@@ -32,7 +34,12 @@ if not st.session_state.document_downloaded:
     if download_button and not st.session_state.document_downloaded:
         with st.sidebar.status("Downloading document..."):
             try:
-                FireRequests().download(document_url, filenames="temp.pdf")
+                if document_url.startswith("http"):
+                    FireRequests().download(document_url, filenames="temp.pdf")
+                else:
+                    document_url = f"https://drive.google.com/uc?id={document_url}"
+                    gdown.download(document_url, output="temp.pdf")
+
                 proceed_to_text_loader_configuration = True
             except Exception as e:
                 st.sidebar.error(f"Download failed: {e}")
