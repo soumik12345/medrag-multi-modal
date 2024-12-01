@@ -1,7 +1,7 @@
-
 import streamlit as st
-import weave
+import importlib
 
+import weave
 from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
 from medrag_multi_modal.retrieval.text_retrieval import (
     BM25sRetriever,
@@ -32,7 +32,7 @@ if weave_project_name != "":
 
 chunk_dataset_id = st.sidebar.selectbox(
     label="Chunk Dataset ID",
-    options=["ashwiniai/medrag-text-corpus-chunks"],
+    options=["ashwiniai/anatomy-corpus-chunks"],
 )
 pdf_loader_name = st.sidebar.selectbox(
     label="PDF Loader Name",
@@ -85,17 +85,17 @@ if retriever_type != "":
         )
     elif retriever_type == "Contriever":
         retriever = ContrieverRetriever.from_index(
-            index_repo_id="ashwiniai/medrag-text-corpus-chunks-contriever",
+            index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-contriever",
             chunk_dataset=chunk_dataset_id,
         )
     elif retriever_type == "MedCPT":
         retriever = MedCPTRetriever.from_index(
-            index_repo_id="ashwiniai/medrag-text-corpus-chunks-medcpt",
+            index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-medcpt",
             chunk_dataset=chunk_dataset_id,
         )
     elif retriever_type == "NV-Embed-v2":
         retriever = NVEmbed2Retriever.from_index(
-            index_repo_id="ashwiniai/medrag-text-corpus-chunks-nv-embed-2",
+            index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-nv-embed-2",
             chunk_dataset=chunk_dataset_id,
         )
 
