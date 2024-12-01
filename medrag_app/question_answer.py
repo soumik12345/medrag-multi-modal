@@ -87,16 +87,19 @@ if retriever_type != "":
         retriever = ContrieverRetriever.from_index(
             index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-contriever",
             chunk_dataset=chunk_dataset_id,
+            chunk_dataset_split=pdf_loader_name,
         )
     elif retriever_type == "MedCPT":
         retriever = MedCPTRetriever.from_index(
             index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-medcpt",
             chunk_dataset=chunk_dataset_id,
+            chunk_dataset_split=pdf_loader_name,
         )
     elif retriever_type == "NV-Embed-v2":
         retriever = NVEmbed2Retriever.from_index(
             index_repo_id=f"ashwiniai/anatomy-corpus-{pdf_loader_name}-nv-embed-2",
             chunk_dataset=chunk_dataset_id,
+            chunk_dataset_split=pdf_loader_name,
         )
 
     medqa_assistant = MedQAAssistant(
