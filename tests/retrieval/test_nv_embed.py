@@ -1,6 +1,8 @@
+import pytest
 from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
 
+@pytest.mark.skip(reason="Repository not implemented")
 def test_contriever_retriever():
     retriever = NVEmbed2Retriever().from_index(
         index_repo_id="geekyrakshit/grays-anatomy-index-nvembed2",
