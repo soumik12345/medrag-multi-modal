@@ -4,7 +4,7 @@ from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
 from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2)
+@pytest.mark.skip(reason="Repository not implemented")
 def test_medqa_assistant():
     retriever = BM25sRetriever.from_index(
         index_repo_id="ashwiniai/anatomy-corpus-pypdf2textloader-bm25s"
