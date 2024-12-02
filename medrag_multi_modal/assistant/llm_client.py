@@ -75,6 +75,7 @@ class LLMClient(weave.Model):
     model_name: str
     client_type: Optional[ClientType]
     publish_system_prompt_to_weave: bool
+    message_history: list[dict] = []
 
     def __init__(
         self,
@@ -246,19 +247,24 @@ class LLMClient(weave.Model):
             else:
                 user_messages.append({"type": "text", "text": prompt})
         messages = system_messages + [{"role": "user", "content": user_messages}]
+        self.message_history.extend(messages)
 
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
         if schema is None:
             completion = client.chat.completions.create(
-                model=self.model_name, messages=messages
+                model=self.model_name, messages=self.message_history
             )
             return completion.choices[0].message.content
 
-        completion = weave.op()(client.beta.chat.completions.parse)(
-            model=self.model_name, messages=messages, response_format=schema
+        completion = client.beta.chat.completions.parse(
+            model=self.model_name,
+            messages=self.message_history,
+            response_format=schema,
         )
-        return completion.choices[0].message.parsed
+        response = completion.choices[0].message.parsed
+        self.message_history.append({"role": "assistant", "content": response})
+        return response
 
     @weave.op()
     def predict(
