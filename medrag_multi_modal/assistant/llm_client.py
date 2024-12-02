@@ -70,18 +70,21 @@ class LLMClient(weave.Model):
         client_type (Optional[ClientType]): The type of client (e.g., GEMINI, MISTRAL, OPENAI).
             If not provided, it is inferred from the model_name.
         publish_system_prompt_to_weave (bool): Whether to publish the system prompt to Weave.
+        publish_message_history_to_weave (bool): Whether to publish the message history to Weave.
     """
 
     model_name: str
     client_type: Optional[ClientType]
     publish_system_prompt_to_weave: bool
     message_history: Union[list[dict], genai.ChatSession] = []
+    publish_message_history_to_weave: bool = False
 
     def __init__(
         self,
         model_name: str,
         client_type: Optional[ClientType] = None,
         publish_system_prompt_to_weave: bool = True,
+        publish_message_history_to_weave: bool = False,
     ):
         if client_type is None:
             if model_name in GOOGLE_MODELS:
@@ -96,6 +99,7 @@ class LLMClient(weave.Model):
             model_name=model_name,
             client_type=client_type,
             publish_system_prompt_to_weave=publish_system_prompt_to_weave,
+            publish_message_history_to_weave=publish_message_history_to_weave,
         )
 
     @weave.op()
@@ -148,6 +152,18 @@ class LLMClient(weave.Model):
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             },
         )
+
+        if self.publish_message_history_to_weave and isinstance(
+            self.message_history, genai.ChatSession
+        ):
+            history = []
+            for message in self.message_history.history:
+                for part in message.parts:
+                    history.append({"role": message.role, "text": part.text})
+            weave.publish(
+                weave.MessagesPrompt(history),
+                name="medqa_message_history_gemini",
+            )
 
         if not isinstance(self.message_history, genai.ChatSession):
             self.message_history = model.start_chat()
@@ -213,6 +229,12 @@ class LLMClient(weave.Model):
         )
         self.message_history.extend(messages)
 
+        if self.publish_message_history_to_weave:
+            weave.publish(
+                weave.MessagesPrompt(messages),
+                name="medqa_message_history_mistral",
+            )
+
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
 
@@ -271,6 +293,12 @@ class LLMClient(weave.Model):
                 user_messages.append({"type": "text", "text": prompt})
         messages = system_messages + [{"role": "user", "content": user_messages}]
         self.message_history.extend(messages)
+
+        if self.publish_message_history_to_weave:
+            weave.publish(
+                weave.MessagesPrompt(messages),
+                name="medqa_message_history_openai",
+            )
 
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
