@@ -73,8 +73,14 @@ class LLMClient(weave.Model):
 
     model_name: str
     client_type: Optional[ClientType]
+    publish_system_prompt_to_weave: bool
 
-    def __init__(self, model_name: str, client_type: Optional[ClientType] = None):
+    def __init__(
+        self,
+        model_name: str,
+        client_type: Optional[ClientType] = None,
+        publish_system_prompt_to_weave: bool = True,
+    ):
         if client_type is None:
             if model_name in GOOGLE_MODELS:
                 client_type = ClientType.GEMINI
@@ -84,7 +90,11 @@ class LLMClient(weave.Model):
                 client_type = ClientType.OPENAI
             else:
                 raise ValueError(f"Invalid model name: {model_name}")
-        super().__init__(model_name=model_name, client_type=client_type)
+        super().__init__(
+            model_name=model_name,
+            client_type=client_type,
+            publish_system_prompt_to_weave=publish_system_prompt_to_weave,
+        )
 
     @weave.op()
     def execute_gemini_sdk(
@@ -100,6 +110,22 @@ class LLMClient(weave.Model):
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
         )
         user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
+
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(
+                    [{"system_prompt": prompt} for prompt in system_prompt]
+                ),
+                name="medqa_system_prompt_gemini",
+            )
+            system_prompt_obj = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+            system_prompt = [obj["system_prompt"] for obj in system_prompt_obj]
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
         model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
@@ -152,6 +178,18 @@ class LLMClient(weave.Model):
             {"role": "user", "content": user_messages},
         ]
 
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(messages[0]), name="medqa_system_prompt_mistral"
+            )
+            messages[0] = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
 
@@ -180,6 +218,19 @@ class LLMClient(weave.Model):
         system_messages = [
             {"role": "system", "content": prompt} for prompt in system_prompt
         ]
+
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(system_messages), name="medqa_system_prompt_openai"
+            )
+            system_messages = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+
         user_messages = []
         for prompt in user_prompt:
             if isinstance(prompt, Image.Image):

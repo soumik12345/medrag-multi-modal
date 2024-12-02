@@ -23,32 +23,22 @@ class MedQAAssistant(weave.Model):
         import weave
         from dotenv import load_dotenv
 
-        from medrag_multi_modal.assistant import (
-            FigureAnnotatorFromPageImage,
-            LLMClient,
-            MedQAAssistant,
-        )
-        from medrag_multi_modal.retrieval import MedCPTRetriever
+        from medrag_multi_modal.assistant import LLMClient, MedQAAssistant
+        from medrag_multi_modal.retrieval.text_retrieval import BM25sRetriever
 
         load_dotenv()
         weave.init(project_name="ml-colabs/medrag-multi-modal")
-
+        retriever = BM25sRetriever.from_index(
+            index_repo_id="ashwiniai/anatomy-corpus-pypdf2textloader-bm25s"
+        )
         llm_client = LLMClient(model_name="gemini-1.5-flash")
-
-        retriever=MedCPTRetriever.from_wandb_artifact(
-            chunk_dataset_name="grays-anatomy-chunks:v0",
-            index_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-medcpt:v0",
-        )
-
-        figure_annotator=FigureAnnotatorFromPageImage(
-            figure_extraction_llm_client=LLMClient(model_name="pixtral-12b-2409"),
-            structured_output_llm_client=LLMClient(model_name="gpt-4o"),
-            image_artifact_address="ml-colabs/medrag-multi-modal/grays-anatomy-images-marker:v6",
-        )
         medqa_assistant = MedQAAssistant(
-            llm_client=llm_client, retriever=retriever, figure_annotator=figure_annotator
+            llm_client=llm_client,
+            retriever=retriever,
+            top_k_chunks_for_query=5,
+            top_k_chunks_for_options=3,
         )
-        medqa_assistant.predict(query="What is ribosome?")
+        response = medqa_assistant.predict(query="What are ribosomes?")
         ```
 
     Args:
