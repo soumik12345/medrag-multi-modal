@@ -1,8 +1,8 @@
-import json
 import os
 from enum import Enum
 from typing import Any, Optional, Union
 
+import google.generativeai as genai
 import instructor
 import weave
 from PIL import Image
@@ -75,7 +75,7 @@ class LLMClient(weave.Model):
     model_name: str
     client_type: Optional[ClientType]
     publish_system_prompt_to_weave: bool
-    message_history: list[dict] = []
+    message_history: Union[list[dict], genai.ChatSession] = []
 
     def __init__(
         self,
@@ -105,8 +105,16 @@ class LLMClient(weave.Model):
         system_prompt: Optional[Union[str, list[str]]] = None,
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
-        import google.generativeai as genai
         from google.generativeai.types import HarmBlockThreshold, HarmCategory
+
+        def get_chat_response(
+            chat: genai.ChatSession, prompt, generation_config
+        ) -> str:
+            text_response = []
+            responses = chat.send_message(prompt)
+            for chunk in responses:
+                text_response.append(chunk.text)
+            return "".join(text_response)
 
         system_prompt = (
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
@@ -130,17 +138,9 @@ class LLMClient(weave.Model):
             system_prompt = [obj["system_prompt"] for obj in system_prompt_obj]
 
         genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
-        generation_config = (
-            None
-            if schema is None
-            else genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=schema
-            )
-        )
-        response = model.generate_content(
-            user_prompt,
-            generation_config=generation_config,
+        model = genai.GenerativeModel(
+            self.model_name,
+            system_instruction=system_prompt,
             # This is necessary in order to answer questions about anatomy, sexual diseases,
             # medical devices, medicines, etc.
             safety_settings={
@@ -148,7 +148,18 @@ class LLMClient(weave.Model):
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             },
         )
-        return response.text if schema is None else json.loads(response.text)
+
+        if not isinstance(self.message_history, genai.ChatSession):
+            self.message_history = model.start_chat()
+
+        generation_config = (
+            None
+            if schema is None
+            else genai.GenerationConfig(
+                response_mime_type="application/json", response_schema=schema
+            )
+        )
+        return get_chat_response(self.message_history, user_prompt, generation_config)
 
     @weave.op()
     def execute_mistral_sdk(
