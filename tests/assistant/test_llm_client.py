@@ -16,7 +16,11 @@ class ImageDescription(BaseModel):
 
 
 def test_openai_llm_client():
-    llm_client = LLMClient(model_name="gpt-4o-mini", client_type=ClientType.OPENAI)
+    llm_client = LLMClient(
+        model_name="gpt-4o-mini",
+        client_type=ClientType.OPENAI,
+        publish_system_prompt_to_weave=False,
+    )
     event = llm_client.predict(
         system_prompt="Extract the event information",
         user_prompt="Alice and Bob are going to a science fair on Friday.",
@@ -28,7 +32,11 @@ def test_openai_llm_client():
 
 
 def test_openai_image_description():
-    llm_client = LLMClient(model_name="gpt-4o-mini", client_type=ClientType.OPENAI)
+    llm_client = LLMClient(
+        model_name="gpt-4o-mini",
+        client_type=ClientType.OPENAI,
+        publish_system_prompt_to_weave=False,
+    )
     description = llm_client.predict(
         system_prompt="Describe the image",
         user_prompt=[Image.open("./assets/test_image.png")],
@@ -40,7 +48,9 @@ def test_openai_image_description():
 @pytest.mark.skip(reason="Google changed output format")
 def test_google_llm_client():
     llm_client = LLMClient(
-        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
+        model_name="gemini-1.5-flash-latest",
+        client_type=ClientType.GEMINI,
+        publish_system_prompt_to_weave=False,
     )
     event = llm_client.predict(
         system_prompt="Extract the event information",
@@ -56,7 +66,9 @@ def test_google_llm_client():
 @pytest.mark.skip(reason="Google changed output format")
 def test_google_image_client():
     llm_client = LLMClient(
-        model_name="gemini-1.5-flash-latest", client_type=ClientType.GEMINI
+        model_name="gemini-1.5-flash-latest",
+        client_type=ClientType.GEMINI,
+        publish_system_prompt_to_weave=False,
     )
     description = llm_client.predict(
         system_prompt="Describe the image",
