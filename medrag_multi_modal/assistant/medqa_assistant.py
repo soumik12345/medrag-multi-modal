@@ -76,7 +76,25 @@ class MedQAAssistant(weave.Model):
         return retrieved_chunks
 
     @weave.op()
-    def predict(self, query: str, options: Optional[list[str]] = None) -> MedQAResponse:
+    def get_figure_descriptions(self, page_indices: list[int]) -> list[str]:
+        figure_descriptions = []
+        if self.figure_annotator is not None:
+            for page_idx in page_indices:
+                figure_annotations = self.figure_annotator.predict(page_idx=page_idx)[
+                    page_idx
+                ]
+                figure_descriptions += [
+                    item["figure_description"] for item in figure_annotations
+                ]
+        return figure_descriptions
+
+    @weave.op()
+    def predict(
+        self,
+        query: str,
+        options: Optional[list[str]] = None,
+        use_figure_descriptions: bool = False,
+    ) -> MedQAResponse:
         """
         Generates a response to a medical query by retrieving relevant text chunks and figure descriptions
         from a medical document and using a language model to generate the final response.
@@ -99,7 +117,7 @@ class MedQAAssistant(weave.Model):
         Args:
             query (str): The medical query to be answered.
             options (Optional[list[str]]): The list of options to choose from.
-            rely_only_on_context (bool): Whether to rely only on the context provided or not during response generation.
+            use_figure_descriptions (bool): Whether to use figure descriptions in the response generation or not.
 
         Returns:
             MedQAResponse: The generated response to the query, including source information.
@@ -113,16 +131,6 @@ class MedQAAssistant(weave.Model):
         for chunk in retrieved_chunks:
             retrieved_chunk_texts.append(chunk["text"])
             page_indices.add(int(chunk["page_idx"]))
-
-        figure_descriptions = []
-        if self.figure_annotator is not None:
-            for page_idx in page_indices:
-                figure_annotations = self.figure_annotator.predict(page_idx=page_idx)[
-                    page_idx
-                ]
-                figure_descriptions += [
-                    item["figure_description"] for item in figure_annotations
-                ]
 
         system_prompt = """You are an expert in medical science. You are given a question
 and a list of excerpts from various medical documents.
@@ -147,9 +155,18 @@ explain your answer to justify why you chose that option.
 You are not allowed to use any external knowledge to answer the question.
 """
 
+        figure_descriptions = (
+            self.get_figure_descriptions(page_indices)
+            if use_figure_descriptions
+            else []
+        )
         response = self.llm_client.predict(
             system_prompt=system_prompt,
-            user_prompt=[query, *retrieved_chunk_texts, *figure_descriptions],
+            user_prompt=[
+                query,
+                *retrieved_chunk_texts,
+                *figure_descriptions,
+            ],
             schema=MedQAMCQResponse if len(options) > 0 else None,
         )
 
