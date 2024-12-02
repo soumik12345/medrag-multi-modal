@@ -69,6 +69,7 @@ class LLMClient(weave.Model):
         model_name (str): The name of the model to be used for predictions.
         client_type (Optional[ClientType]): The type of client (e.g., GEMINI, MISTRAL, OPENAI).
             If not provided, it is inferred from the model_name.
+        publish_system_prompt_to_weave (bool): Whether to publish the system prompt to Weave.
     """
 
     model_name: str
