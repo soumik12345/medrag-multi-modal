@@ -175,22 +175,32 @@ class LLMClient(weave.Model):
                 )
             else:
                 user_messages.append({"type": "text", "text": prompt})
-        messages = [
-            {"role": "system", "content": system_messages},
-            {"role": "user", "content": user_messages},
-        ]
 
         if self.publish_system_prompt_to_weave:
             ref = weave.publish(
-                weave.MessagesPrompt(messages[0]), name="medqa_system_prompt_mistral"
+                weave.MessagesPrompt(system_messages),
+                name="medqa_system_prompt_mistral",
             )
-            messages[0] = (
+            system_messages = (
                 weave.ref(
                     f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
                 )
                 .get()
                 .format()
             )
+
+        messages = []
+        messages = (
+            messages + [{"role": "system", "content": system_messages}]
+            if len(system_messages) > 0
+            else messages
+        )
+        messages = (
+            messages + [{"role": "user", "content": user_messages}]
+            if len(user_messages) > 0
+            else messages
+        )
+        self.message_history.extend(messages)
 
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
@@ -200,7 +210,9 @@ class LLMClient(weave.Model):
                 "Mistral does not support structured output using a schema"
             )
         else:
-            response = client.chat.complete(model=self.model_name, messages=messages)
+            response = client.chat.complete(
+                model=self.model_name, messages=self.message_history
+            )
             return response.choices[0].message.content
 
     @weave.op()
