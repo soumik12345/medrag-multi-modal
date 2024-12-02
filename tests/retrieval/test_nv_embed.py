@@ -1,4 +1,5 @@
 import pytest
+
 from medrag_multi_modal.retrieval.text_retrieval import NVEmbed2Retriever
 
 

@@ -1,9 +1,5 @@
-from .image_loader import (
-    FitzPILImageLoader,  # MarkerImageLoader,
-    PDF2ImageLoader,
-    PDFPlumberImageLoader,
-    PyMuPDFImageLoader,
-)
+from .image_loader import FitzPILImageLoader  # MarkerImageLoader,
+from .image_loader import PDF2ImageLoader, PDFPlumberImageLoader, PyMuPDFImageLoader
 from .text_loader import (
     MarkerTextLoader,
     PDFPlumberTextLoader,

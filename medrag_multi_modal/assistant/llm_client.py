@@ -1,8 +1,8 @@
-import json
 import os
 from enum import Enum
 from typing import Any, Optional, Union
 
+import google.generativeai as genai
 import instructor
 import weave
 from PIL import Image
@@ -69,12 +69,23 @@ class LLMClient(weave.Model):
         model_name (str): The name of the model to be used for predictions.
         client_type (Optional[ClientType]): The type of client (e.g., GEMINI, MISTRAL, OPENAI).
             If not provided, it is inferred from the model_name.
+        publish_system_prompt_to_weave (bool): Whether to publish the system prompt to Weave.
+        publish_message_history_to_weave (bool): Whether to publish the message history to Weave.
     """
 
     model_name: str
     client_type: Optional[ClientType]
+    publish_system_prompt_to_weave: bool
+    message_history: Union[list[dict], genai.ChatSession] = []
+    publish_message_history_to_weave: bool = False
 
-    def __init__(self, model_name: str, client_type: Optional[ClientType] = None):
+    def __init__(
+        self,
+        model_name: str,
+        client_type: Optional[ClientType] = None,
+        publish_system_prompt_to_weave: bool = True,
+        publish_message_history_to_weave: bool = False,
+    ):
         if client_type is None:
             if model_name in GOOGLE_MODELS:
                 client_type = ClientType.GEMINI
@@ -84,7 +95,12 @@ class LLMClient(weave.Model):
                 client_type = ClientType.OPENAI
             else:
                 raise ValueError(f"Invalid model name: {model_name}")
-        super().__init__(model_name=model_name, client_type=client_type)
+        super().__init__(
+            model_name=model_name,
+            client_type=client_type,
+            publish_system_prompt_to_weave=publish_system_prompt_to_weave,
+            publish_message_history_to_weave=publish_message_history_to_weave,
+        )
 
     @weave.op()
     def execute_gemini_sdk(
@@ -93,26 +109,42 @@ class LLMClient(weave.Model):
         system_prompt: Optional[Union[str, list[str]]] = None,
         schema: Optional[Any] = None,
     ) -> Union[str, Any]:
-        import google.generativeai as genai
         from google.generativeai.types import HarmBlockThreshold, HarmCategory
+
+        def get_chat_response(
+            chat: genai.ChatSession, prompt, generation_config
+        ) -> str:
+            text_response = []
+            responses = chat.send_message(prompt)
+            for chunk in responses:
+                text_response.append(chunk.text)
+            return "".join(text_response)
 
         system_prompt = (
             [system_prompt] if isinstance(system_prompt, str) else system_prompt
         )
         user_prompt = [user_prompt] if isinstance(user_prompt, str) else user_prompt
 
-        genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel(self.model_name, system_instruction=system_prompt)
-        generation_config = (
-            None
-            if schema is None
-            else genai.GenerationConfig(
-                response_mime_type="application/json", response_schema=schema
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(
+                    [{"system_prompt": prompt} for prompt in system_prompt]
+                ),
+                name="medqa_system_prompt_gemini",
             )
-        )
-        response = model.generate_content(
-            user_prompt,
-            generation_config=generation_config,
+            system_prompt_obj = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+            system_prompt = [obj["system_prompt"] for obj in system_prompt_obj]
+
+        genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
+        model = genai.GenerativeModel(
+            self.model_name,
+            system_instruction=system_prompt,
             # This is necessary in order to answer questions about anatomy, sexual diseases,
             # medical devices, medicines, etc.
             safety_settings={
@@ -120,7 +152,30 @@ class LLMClient(weave.Model):
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             },
         )
-        return response.text if schema is None else json.loads(response.text)
+
+        if self.publish_message_history_to_weave and isinstance(
+            self.message_history, genai.ChatSession
+        ):
+            history = []
+            for message in self.message_history.history:
+                for part in message.parts:
+                    history.append({"role": message.role, "text": part.text})
+            weave.publish(
+                weave.MessagesPrompt(history),
+                name="medqa_message_history_gemini",
+            )
+
+        if not isinstance(self.message_history, genai.ChatSession):
+            self.message_history = model.start_chat()
+
+        generation_config = (
+            None
+            if schema is None
+            else genai.GenerationConfig(
+                response_mime_type="application/json", response_schema=schema
+            )
+        )
+        return get_chat_response(self.message_history, user_prompt, generation_config)
 
     @weave.op()
     def execute_mistral_sdk(
@@ -147,10 +202,38 @@ class LLMClient(weave.Model):
                 )
             else:
                 user_messages.append({"type": "text", "text": prompt})
-        messages = [
-            {"role": "system", "content": system_messages},
-            {"role": "user", "content": user_messages},
-        ]
+
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(system_messages),
+                name="medqa_system_prompt_mistral",
+            )
+            system_messages = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+
+        messages = []
+        messages = (
+            messages + [{"role": "system", "content": system_messages}]
+            if len(system_messages) > 0
+            else messages
+        )
+        messages = (
+            messages + [{"role": "user", "content": user_messages}]
+            if len(user_messages) > 0
+            else messages
+        )
+        self.message_history.extend(messages)
+
+        if self.publish_message_history_to_weave:
+            weave.publish(
+                weave.MessagesPrompt(messages),
+                name="medqa_message_history_mistral",
+            )
 
         client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
         client = instructor.from_mistral(client) if schema is not None else client
@@ -160,7 +243,9 @@ class LLMClient(weave.Model):
                 "Mistral does not support structured output using a schema"
             )
         else:
-            response = client.chat.complete(model=self.model_name, messages=messages)
+            response = client.chat.complete(
+                model=self.model_name, messages=self.message_history
+            )
             return response.choices[0].message.content
 
     @weave.op()
@@ -180,6 +265,19 @@ class LLMClient(weave.Model):
         system_messages = [
             {"role": "system", "content": prompt} for prompt in system_prompt
         ]
+
+        if self.publish_system_prompt_to_weave:
+            ref = weave.publish(
+                weave.MessagesPrompt(system_messages), name="medqa_system_prompt_openai"
+            )
+            system_messages = (
+                weave.ref(
+                    f"weave:///{ref.entity}/{ref.project}/object/{ref.name}:{ref._digest}"
+                )
+                .get()
+                .format()
+            )
+
         user_messages = []
         for prompt in user_prompt:
             if isinstance(prompt, Image.Image):
@@ -194,19 +292,30 @@ class LLMClient(weave.Model):
             else:
                 user_messages.append({"type": "text", "text": prompt})
         messages = system_messages + [{"role": "user", "content": user_messages}]
+        self.message_history.extend(messages)
+
+        if self.publish_message_history_to_weave:
+            weave.publish(
+                weave.MessagesPrompt(messages),
+                name="medqa_message_history_openai",
+            )
 
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
         if schema is None:
             completion = client.chat.completions.create(
-                model=self.model_name, messages=messages
+                model=self.model_name, messages=self.message_history
             )
             return completion.choices[0].message.content
 
-        completion = weave.op()(client.beta.chat.completions.parse)(
-            model=self.model_name, messages=messages, response_format=schema
+        completion = client.beta.chat.completions.parse(
+            model=self.model_name,
+            messages=self.message_history,
+            response_format=schema,
         )
-        return completion.choices[0].message.parsed
+        response = completion.choices[0].message.parsed
+        self.message_history.append({"role": "assistant", "content": response})
+        return response
 
     @weave.op()
     def predict(
